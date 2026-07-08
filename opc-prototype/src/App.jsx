@@ -8,7 +8,7 @@ import {
   MagicWand,
   Target,
 } from "@phosphor-icons/react";
-import dossierImage from "./assets/opc-editorial-dossier.png";
+import dossierImage from "./assets/opc-editorial-dossier.webp";
 
 const dimensions = [
   "内容能力",
