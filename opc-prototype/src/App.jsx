@@ -173,7 +173,7 @@ function AppHeader({ view, setView }) {
           <small>Human Leverage Platform</small>
         </span>
       </button>
-      <nav>
+      <nav aria-label="主导航">
         {nav.map(([key, label]) => (
           <button
             className={view === key ? "active" : ""}
