@@ -8183,3 +8183,451 @@ textarea {
     font-size: 11px;
   }
 }
+
+/* Soft couture pass: gentler surfaces, less severe contrast, same premium structure. */
+:root {
+  --opc-ink: #351824;
+  --opc-wine: #4f1730;
+  --opc-wine-2: #74415a;
+  --opc-plum: #8c6474;
+  --opc-gold: #9b7440;
+  --opc-gold-2: #c3a36d;
+  --opc-gold-text: #745226;
+  --opc-muted: #604755;
+  --opc-muted-soft: #806b75;
+  --opc-line: rgba(119, 76, 50, 0.115);
+  --opc-line-strong: rgba(119, 76, 50, 0.17);
+  --opc-shadow: 0 24px 66px rgba(53, 24, 36, 0.075);
+  --opc-shadow-soft: 0 16px 46px rgba(53, 24, 36, 0.052);
+  --opc-shadow-feather: 0 18px 54px rgba(53, 24, 36, 0.058);
+  --opc-surface-milk: linear-gradient(180deg, rgba(255, 253, 248, 0.9), rgba(250, 243, 233, 0.58));
+  --opc-surface-paper: linear-gradient(140deg, rgba(255, 253, 248, 0.96), rgba(250, 242, 231, 0.76));
+}
+
+body {
+  background:
+    linear-gradient(180deg, #fbf4e9 0%, #f8efe4 46%, #fffaf2 100%);
+}
+
+.site-header {
+  filter: drop-shadow(0 16px 34px rgba(53, 24, 36, 0.035));
+}
+
+.site-header::before {
+  border-bottom-color: rgba(119, 76, 50, 0.075);
+  background:
+    linear-gradient(180deg, rgba(255, 250, 242, 0.94), rgba(255, 250, 242, 0.82));
+}
+
+.brand-mark {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.02)),
+    linear-gradient(160deg, #7b435a 0%, #542039 78%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.44),
+    0 12px 28px rgba(75, 18, 42, 0.13);
+}
+
+.site-header nav {
+  border-color: rgba(119, 76, 50, 0.105);
+  background:
+    linear-gradient(180deg, rgba(255, 253, 248, 0.9), rgba(249, 241, 231, 0.66));
+  box-shadow:
+    0 14px 38px rgba(53, 24, 36, 0.055),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+.site-header nav button {
+  color: #644554;
+  border-radius: 7px;
+}
+
+.site-header nav button:hover {
+  color: #4f1730;
+  background: rgba(79, 23, 48, 0.044);
+}
+
+.site-header nav button.active {
+  color: #fffaf2;
+  background:
+    linear-gradient(135deg, #6f3550 0%, #511b34 58%, #3a1427 100%);
+  box-shadow:
+    0 12px 30px rgba(75, 18, 42, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.site-header nav button.active::after {
+  background:
+    linear-gradient(90deg, transparent, rgba(195, 163, 109, 0.74), transparent);
+  opacity: 0.86;
+}
+
+.site-header .auth-pill,
+.auth-pill,
+.primary-btn {
+  border-color: rgba(79, 23, 48, 0.1);
+  background:
+    linear-gradient(135deg, #6b2f4b 0%, #501a33 62%, #351321 100%);
+  box-shadow:
+    0 16px 38px rgba(75, 18, 42, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.primary-btn:hover,
+.auth-pill:hover {
+  background:
+    linear-gradient(135deg, #733955 0%, #581f39 62%, #3b1626 100%);
+}
+
+.ghost-btn {
+  color: #552139;
+  border-color: rgba(119, 76, 50, 0.135);
+  background:
+    linear-gradient(180deg, rgba(255, 253, 248, 0.92), rgba(250, 243, 233, 0.5));
+  box-shadow:
+    0 12px 30px rgba(53, 24, 36, 0.038),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.primary-btn:hover,
+.ghost-btn:hover,
+.auth-pill:hover,
+.action-tile:hover,
+.option-list button:hover,
+.category-grid button:hover {
+  box-shadow:
+    0 20px 48px rgba(53, 24, 36, 0.085),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+.editorial-home .editorial-hero {
+  border-color: rgba(119, 76, 50, 0.095);
+  background:
+    linear-gradient(90deg, rgba(255, 250, 242, 0.99) 0%, rgba(255, 250, 242, 0.94) 38%, rgba(249, 239, 226, 0.6) 66%, rgba(240, 226, 211, 0.22) 100%),
+    linear-gradient(180deg, #fffaf2 0%, #f8eee1 100%);
+  box-shadow: inset 0 -1px 0 rgba(119, 76, 50, 0.07);
+}
+
+.editorial-home .editorial-copy h1,
+.card-title-row h1,
+.taxonomy-intro h2,
+.bespoke-intro h2,
+.calculation-head h2,
+.question-panel h2,
+.side-summary h1,
+.premium-card-title h2 {
+  text-shadow: 0 12px 28px rgba(53, 24, 36, 0.052);
+}
+
+.editorial-home .editorial-copy h1 .desktop-hero-title > span,
+.editorial-home .editorial-copy h1 .mobile-hero-title > span,
+.editorial-home .editorial-copy h1 .hero-title-accent {
+  background:
+    linear-gradient(92deg, #8d6635 0%, #bb9658 44%, #74415a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.editorial-home .editorial-copy h1::after,
+.taxonomy-intro h2::after,
+.card-title-row h1::after,
+.bespoke-intro h2::after,
+.calculation-head h2::after,
+.question-panel h2::before {
+  background:
+    linear-gradient(90deg, rgba(155, 116, 64, 0.62), rgba(155, 116, 64, 0.16), transparent);
+}
+
+.editorial-home .editorial-copy h1::before {
+  width: 34px;
+  background:
+    linear-gradient(90deg, rgba(116, 65, 90, 0.85), rgba(155, 116, 64, 0.52));
+}
+
+.editorial-home .editorial-copy .eyebrow {
+  border-color: rgba(155, 116, 64, 0.16);
+  background:
+    linear-gradient(180deg, rgba(255, 253, 248, 0.9), rgba(250, 243, 233, 0.58));
+  box-shadow: 0 10px 26px rgba(53, 24, 36, 0.042);
+}
+
+.premium-dossier-card,
+.mobile-outcome-card,
+.chapter-list,
+.taxonomy-section,
+.side-summary,
+.question-panel,
+.category-pool,
+.dimension-band,
+.opc-master-card,
+.action-column > *,
+.all-match-panel,
+.deep-insight,
+.bespoke-route-section,
+.calculation-section {
+  border-color: var(--opc-line);
+  border-radius: 8px;
+  background: var(--opc-surface-paper);
+  box-shadow: var(--opc-shadow-feather);
+}
+
+.premium-dossier-card {
+  border-radius: 6px;
+  background:
+    linear-gradient(140deg, rgba(255, 253, 248, 0.98) 0%, rgba(252, 245, 235, 0.86) 100%);
+  box-shadow:
+    0 32px 82px rgba(53, 24, 36, 0.115),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.78);
+}
+
+.premium-dossier-card::after {
+  right: -20px;
+  width: 20px;
+  border-radius: 0 6px 6px 0;
+  background:
+    linear-gradient(180deg, #68364f 0%, #42162b 100%);
+  box-shadow: 12px 22px 38px rgba(53, 24, 36, 0.13);
+  opacity: 0.86;
+}
+
+.premium-card-top em,
+.opc-master-card::before {
+  background:
+    linear-gradient(180deg, #c3a36d 0%, #9b7440 100%);
+  box-shadow: 0 12px 24px rgba(155, 116, 64, 0.14);
+}
+
+.editorial-step,
+.category-grid button,
+.option-list button,
+.dimension-cards article,
+.top-preview div,
+.tool-map div,
+.metric,
+.category-match,
+.insight-card,
+.path-icons span,
+.action-tile,
+.formula-grid article,
+.dimension-report-row,
+.rationale-card {
+  border-color: rgba(119, 76, 50, 0.105);
+  border-radius: 8px;
+  background: var(--opc-surface-milk);
+  box-shadow:
+    0 10px 28px rgba(53, 24, 36, 0.032),
+    inset 0 1px 0 rgba(255, 255, 255, 0.58);
+}
+
+.editorial-step:hover,
+.category-grid button:hover,
+.option-list button:hover,
+.action-tile:hover,
+.formula-grid article:hover,
+.rationale-card:hover,
+.dimension-report-row:hover {
+  border-color: rgba(155, 116, 64, 0.2);
+  background:
+    linear-gradient(180deg, rgba(255, 253, 248, 0.96), rgba(250, 243, 233, 0.68));
+}
+
+.editorial-step-icon,
+.option-list button span {
+  border-color: rgba(155, 116, 64, 0.21);
+  color: #5b223a;
+  background: rgba(255, 253, 248, 0.78);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.62);
+}
+
+.assessment-shell > .flow-stepper .flow-step,
+.card-shell > .flow-stepper .flow-step {
+  border-color: rgba(119, 76, 50, 0.12);
+  background:
+    linear-gradient(180deg, rgba(255, 253, 248, 0.86), rgba(250, 243, 233, 0.52));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.66);
+}
+
+.assessment-shell > .flow-stepper .flow-step.active,
+.card-shell > .flow-stepper .flow-step.active {
+  color: #4f1730;
+  border-color: rgba(79, 23, 48, 0.2);
+  background:
+    linear-gradient(180deg, rgba(255, 253, 248, 0.94), rgba(248, 238, 225, 0.68));
+  box-shadow:
+    0 12px 30px rgba(75, 18, 42, 0.07),
+    inset 0 -2px 0 rgba(79, 23, 48, 0.72),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.assessment-shell > .flow-stepper .flow-step.active strong,
+.card-shell > .flow-stepper .flow-step.active strong,
+.assessment-shell > .flow-stepper .flow-step.active small,
+.card-shell > .flow-stepper .flow-step.active small {
+  color: #4f1730;
+}
+
+.assessment-shell > .flow-stepper .flow-step.active .step-dot,
+.card-shell > .flow-stepper .flow-step.active .step-dot {
+  color: #fffaf2;
+  background:
+    linear-gradient(145deg, #754059, #4f1730);
+  box-shadow:
+    0 8px 18px rgba(75, 18, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.progress-track {
+  height: 4px;
+  background: rgba(79, 23, 48, 0.075);
+}
+
+.progress-track span,
+.match-bar i,
+.premium-category-row b {
+  background:
+    linear-gradient(90deg, #71324b 0%, #9b7440 100%);
+}
+
+.option-list {
+  gap: 14px;
+}
+
+.option-list button {
+  color: #3c1d2a;
+}
+
+.option-list button.selected {
+  border-color: rgba(79, 23, 48, 0.28);
+  background:
+    linear-gradient(180deg, rgba(255, 250, 242, 0.98), rgba(249, 240, 229, 0.74));
+  box-shadow:
+    0 14px 34px rgba(75, 18, 42, 0.065),
+    inset 2px 0 0 rgba(79, 23, 48, 0.72);
+}
+
+.option-list button.selected span {
+  background:
+    linear-gradient(145deg, #754059, #4f1730);
+  box-shadow:
+    0 8px 20px rgba(75, 18, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.profile-column,
+.radar-column,
+.top3-column,
+.ai-tool-row,
+.ai-tool-row > div,
+.rationale-card dl,
+.card-title-row {
+  border-color: var(--opc-line);
+}
+
+.route-node {
+  border-color: rgba(119, 76, 50, 0.105);
+  background:
+    linear-gradient(180deg, rgba(255, 253, 248, 0.72), rgba(250, 243, 233, 0.38));
+}
+
+.route-node::after {
+  background:
+    linear-gradient(90deg, rgba(155, 116, 64, 0.16), transparent);
+}
+
+.route-node strong,
+.driver-row span {
+  border-color: rgba(155, 116, 64, 0.18);
+  color: #542039;
+  background: rgba(255, 250, 242, 0.72);
+}
+
+.stage-rail {
+  background:
+    linear-gradient(180deg, #c3a36d, #9b7440);
+  box-shadow: 0 16px 34px rgba(155, 116, 64, 0.13);
+}
+
+.premium-side-panel {
+  border-color: rgba(155, 116, 64, 0.18);
+  background:
+    linear-gradient(180deg, rgba(255, 253, 248, 0.94), rgba(250, 243, 233, 0.72));
+  box-shadow: 0 22px 46px rgba(53, 24, 36, 0.095);
+}
+
+.action-tile span,
+.metric span,
+.profile-facts span,
+.ai-tool-row span,
+.rationale-card dt,
+.formula-grid p,
+.dimension-report-row p,
+.editorial-home .editorial-copy p,
+.card-title-row p {
+  color: var(--opc-muted);
+}
+
+@media (max-width: 760px) {
+  .site-header {
+    filter: drop-shadow(0 10px 24px rgba(53, 24, 36, 0.032));
+  }
+
+  .site-header nav {
+    box-shadow:
+      0 10px 26px rgba(53, 24, 36, 0.045),
+      inset 0 1px 0 rgba(255, 255, 255, 0.78);
+  }
+
+  .editorial-home .editorial-hero {
+    background:
+      linear-gradient(180deg, rgba(255, 250, 242, 0.99) 0%, rgba(250, 241, 229, 0.78) 100%);
+  }
+
+  .editorial-home .editorial-copy h1 {
+    text-shadow: 0 10px 22px rgba(53, 24, 36, 0.045);
+  }
+
+  .premium-dossier-card,
+  .mobile-outcome-card,
+  .chapter-list,
+  .taxonomy-section,
+  .side-summary,
+  .question-panel,
+  .category-pool,
+  .dimension-band,
+  .opc-master-card,
+  .action-column > *,
+  .all-match-panel,
+  .deep-insight,
+  .bespoke-route-section,
+  .calculation-section {
+    box-shadow: 0 12px 34px rgba(53, 24, 36, 0.05);
+  }
+
+  .option-list button.selected {
+    box-shadow:
+      0 10px 26px rgba(75, 18, 42, 0.055),
+      inset 2px 0 0 rgba(79, 23, 48, 0.68);
+  }
+}
+
+.site-header nav button.active {
+  color: #4f1730;
+  background:
+    linear-gradient(180deg, rgba(255, 253, 248, 0.96), rgba(249, 240, 229, 0.74));
+  box-shadow:
+    0 10px 24px rgba(53, 24, 36, 0.045),
+    inset 0 -2px 0 rgba(79, 23, 48, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+.site-header nav button.active:hover {
+  color: #4f1730;
+  background:
+    linear-gradient(180deg, rgba(255, 253, 248, 0.98), rgba(249, 240, 229, 0.82));
+}
+
+.site-header nav button.active::after {
+  height: 1px;
+  background:
+    linear-gradient(90deg, transparent, rgba(79, 23, 48, 0.66), transparent);
+}
