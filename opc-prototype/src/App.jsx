@@ -357,16 +357,9 @@ function HomePage({ setView, businessResult }) {
         <div className="editorial-copy">
           <span className="eyebrow">免费 · 三步完成商业定位</span>
           <h1>
-            <span className="desktop-hero-title">
-              测出你的
-              <br />
-              <span>OPC定位卡</span>
-            </span>
-            <span className="mobile-hero-title">
-              测出你的
-              <br />
-              <span>OPC定位卡</span>
-            </span>
+            测出你的
+            <br />
+            <span className="hero-title-accent">OPC定位卡</span>
           </h1>
           <p>
             <span className="desktop-hero-copy">
