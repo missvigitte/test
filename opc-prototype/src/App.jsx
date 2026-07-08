@@ -109,6 +109,10 @@ function fallbackAnswers(questions) {
   return questions.map((_, index) => index % 4 === 0 ? 0 : index % 3 === 0 ? 2 : 1);
 }
 
+function clampScore(value, min = 35, max = 96) {
+  return Math.min(max, Math.max(min, value));
+}
+
 function calculateBusiness(answers) {
   const raw = Object.fromEntries(dimensions.map((dimension) => [dimension, 0]));
   commercialQuestions.forEach((question, index) => {
@@ -129,16 +133,28 @@ function calculateBusiness(answers) {
   const level = levelMap.find((item) => roundedScore >= item.min && roundedScore <= item.max) ?? levelMap[0];
   const strongestDim = dimensions.reduce((top, dim) => percentScores[dim] > percentScores[top] ? dim : top, dimensions[0]);
   const weakestDim = dimensions.reduce((low, dim) => percentScores[dim] < percentScores[low] ? dim : low, dimensions[0]);
-  const recommendedCategories = categoryWeights
+  const categoryMatches = categoryWeights
     .map((category) => {
       const weighted = dimensions.reduce((sum, dim, index) => sum + (percentScores[dim] / 100) * category.weights[index], 0);
       const total = category.weights.reduce((sum, value) => sum + value, 0);
-      return { ...category, match: Math.round((weighted / total) * 100) };
+      const baseMatch = (weighted / total) * 100;
+      const averageRequirement = total / dimensions.length;
+      const affinity = dimensions.reduce((sum, dim, index) => {
+        const scoreDelta = percentScores[dim] - 70;
+        const requirementDelta = category.weights[index] - averageRequirement;
+        return sum + scoreDelta * requirementDelta;
+      }, 0) / 28;
+      const gapRisk = dimensions.reduce((sum, dim, index) => {
+        const required = category.weights[index];
+        const score = percentScores[dim];
+        return required >= 75 && score < 68 ? sum + (68 - score) * 0.16 : sum;
+      }, 0);
+      return { ...category, match: clampScore(Math.round(baseMatch + affinity - gapRisk)) };
     })
-    .sort((a, b) => b.match - a.match)
-    .slice(0, 3);
+    .sort((a, b) => b.match - a.match);
+  const recommendedCategories = categoryMatches.slice(0, 3);
 
-  return { raw, percentScores, totalScore: roundedScore, level, strongestDim, weakestDim, recommendedCategories };
+  return { raw, percentScores, totalScore: roundedScore, level, strongestDim, weakestDim, recommendedCategories, categoryMatches };
 }
 
 function calculateAi(answers) {
@@ -154,6 +170,124 @@ function calculateAi(answers) {
   const weakest = areas.reduce((low, area) => percent[area] < percent[low] ? area : low, areas[0]);
   const strongest = areas.reduce((top, area) => percent[area] > percent[top] ? area : top, areas[0]);
   return { areas, percent, weakest, strongest };
+}
+
+const dimensionInsightCopy = {
+  内容能力: {
+    high: "适合用内容建立第一层信任，把选题、标题和真实体验做成稳定栏目。",
+    mid: "已经有表达基础，下一步要沉淀固定栏目和素材库，减少临场发挥。",
+    low: "先用模板化选题和AI辅助脚本降低启动难度，不急着追求风格完整。",
+  },
+  商业判断力: {
+    high: "能判断谁会买、为什么买，适合先做品类选择和人群切分。",
+    mid: "能看到机会，但需要用市场规模、增速和竞争格局来校准直觉。",
+    low: "优先补一套品类分析框架，避免只凭喜好选项目。",
+  },
+  AI工具熟练度: {
+    high: "AI已经能进入日常流程，可以把内容、客服和复盘拆成自动化任务。",
+    mid: "会用AI提效，但还需要建立提示词库和固定工作流。",
+    low: "先从高频任务切入，用少量工具跑通一条可复用流程。",
+  },
+  销售敏感度: {
+    high: "具备把推荐转化为购买理由的能力，适合快速做首单验证。",
+    mid: "能表达产品价值，后续要补充异议处理和成交话术。",
+    low: "先把销售理解为解决问题，用案例和场景降低开口压力。",
+  },
+  学习能力: {
+    high: "适合短周期试错，能边做边复盘，快速把经验转成SOP。",
+    mid: "具备学习意愿，建议用7天小任务推进，而不是一次性学太多。",
+    low: "先选低门槛项目，用陪跑式任务建立正反馈。",
+  },
+  社交影响力: {
+    high: "已有信任触点，适合用社群、朋友圈和私域承接第一批用户。",
+    mid: "有一定互动基础，下一步要固定输出频率和关系维护节奏。",
+    low: "先从熟人反馈和小范围分享开始，不需要立刻追求大流量。",
+  },
+};
+
+const aiActionCopy = {
+  提示词库: "把选题、标题、产品卖点、私域话术整理成四套固定提示词。",
+  内容生产: "先做7天内容流水线：选题、脚本、封面、发布节奏各一套模板。",
+  自动化流程: "从咨询回复和资料整理开始，先串起一个低成本半自动流程。",
+  私域工具: "建立客户标签、跟进节奏和成交记录，让每一次沟通可复盘。",
+  数据复盘: "每周用数据表比较选题、互动和转化，把感觉变成判断依据。",
+  工具成本: "先保留少数核心工具，按替代流程而不是新鲜感决定是否付费。",
+};
+
+function scoreTier(score) {
+  if (score >= 82) return { label: "核心优势", tone: "strong" };
+  if (score >= 68) return { label: "可放大", tone: "good" };
+  if (score >= 52) return { label: "待系统化", tone: "build" };
+  return { label: "优先补齐", tone: "weak" };
+}
+
+function dimensionInsight(dimension, score) {
+  const band = score >= 75 ? "high" : score >= 55 ? "mid" : "low";
+  return dimensionInsightCopy[dimension]?.[band] ?? "建议先完成最小可行行动，再根据反馈决定加码方向。";
+}
+
+function buildDimensionReport(business) {
+  return dimensions
+    .map((dimension) => {
+      const score = business.percentScores[dimension] ?? 0;
+      const meta = dimensionMeta[dimension];
+      return {
+        dimension,
+        score,
+        weight: Math.round(meta.weight * 100),
+        tier: scoreTier(score),
+        insight: dimensionInsight(dimension, score),
+      };
+    })
+    .sort((a, b) => b.score - a.score);
+}
+
+function buildCategoryRationales(business, ai) {
+  return business.recommendedCategories.map((category, index) => {
+    const drivers = dimensions
+      .map((dimension, dimIndex) => ({
+        dimension,
+        contribution: Math.round((business.percentScores[dimension] / 100) * category.weights[dimIndex]),
+      }))
+      .sort((a, b) => b.contribution - a.contribution)
+      .slice(0, 2);
+    return {
+      ...category,
+      rank: index + 1,
+      drivers,
+      reason: `${drivers.map((item) => item.dimension).join(" + ")}贡献最高，与你当前的${business.strongestDim}优势相连；先补${ai.weakest}，更容易把种草、承接和成交串成闭环。`,
+    };
+  });
+}
+
+function buildBespokeRoute(business, ai) {
+  const primary = business.recommendedCategories[0];
+  return [
+    {
+      period: "第1周",
+      title: "定位校准",
+      text: `以${primary.name}作为主攻方向，拆出1类核心人群、3个高频场景和1个可验证卖点。`,
+      output: "人群画像 + 首批选题",
+    },
+    {
+      period: "第2周",
+      title: "信任资产",
+      text: `放大${business.strongestDim}，把你的经验、审美或判断转成可连续发布的内容栏目。`,
+      output: "10篇内容 + 3个案例",
+    },
+    {
+      period: "第3周",
+      title: "AI流程补齐",
+      text: `${aiActionCopy[ai.weakest]}重点让${ai.weakest}不再靠临时发挥。`,
+      output: "提示词库 + SOP",
+    },
+    {
+      period: "第4周",
+      title: "首单验证",
+      text: `围绕${primary.gate}门槛做一次小单测试，用咨询量、转化率和复购意愿决定是否加码。`,
+      output: "首单复盘 + 升级路径",
+    },
+  ];
 }
 
 function AppHeader({ view, setView }) {
@@ -693,6 +827,11 @@ function PositioningCard({ businessResult, aiResult, setView }) {
   const [copied, setCopied] = useState(false);
   const [insightOpen, setInsightOpen] = useState(false);
   const top = business.recommendedCategories;
+  const primaryCategory = top[0];
+  const isDemoReport = !businessResult || !aiResult;
+  const dimensionReport = buildDimensionReport(business);
+  const categoryRationales = buildCategoryRationales(business, ai);
+  const bespokeRoute = buildBespokeRoute(business, ai);
   const shareText = `我刚测了OPC商业定位，结果是${business.level.level}${business.level.name}。最推荐我从${top[0].name}切入，AI工具短板是${ai.weakest}。`;
 
   async function copyShareText() {
@@ -742,7 +881,7 @@ function PositioningCard({ businessResult, aiResult, setView }) {
         <div>
           <span className="document-kicker">PERSONAL OPC POSITIONING CARD</span>
           <h1>个人OPC定位卡</h1>
-          <p>你的商业等级、推荐品类、AI工具短板和下一步路径已经生成</p>
+          <p>{isDemoReport ? "当前为样例报告；完成两项测评后，会替换为你的专属计算结果。" : "基于你的题目答案，商业等级、推荐品类、AI工具短板和下一步路径已经生成。"}</p>
         </div>
         <button className="ghost-btn" type="button" onClick={() => setView("business")}>重新测评</button>
       </section>
@@ -843,15 +982,115 @@ function PositioningCard({ businessResult, aiResult, setView }) {
         </aside>
       </section>
 
+      <section className="bespoke-route-section" aria-label="高端定制路线">
+        <div className="bespoke-intro">
+          <span className="document-kicker">BESPOKE OPC ROADMAP</span>
+          <h2>高端定制路线</h2>
+          <p>
+            这份路线不是通用建议，而是把你的六维能力、AI工具短板和18个女性赛道权重一起计算后，生成的30天私人商业启动方案。
+          </p>
+          <div className="bespoke-metrics" aria-label="定制路线关键指标">
+            <Metric label="主攻品类" value={primaryCategory.short} />
+            <Metric label="首要补齐" value={ai.weakest} />
+          </div>
+        </div>
+
+        <div className="route-track">
+          {bespokeRoute.map((item, index) => (
+            <article className="route-node" key={item.title}>
+              <div className="route-index">
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                <small>{item.period}</small>
+              </div>
+              <h3>{item.title}</h3>
+              <p>{item.text}</p>
+              <strong>{item.output}</strong>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="calculation-section" aria-label="测评计算明细">
+        <div className="calculation-head">
+          <span className="document-kicker">RESULT METHOD</span>
+          <h2>结果如何计算</h2>
+          <p>每道题按选项强弱折算为维度分，再进入品类权重矩阵。你看到的等级、Top3和行动建议，全部来自这套计算。</p>
+        </div>
+
+        <div className="formula-grid">
+          <article>
+            <span>01</span>
+            <strong>17题商业测评</strong>
+            <p>A/B/C/D按4/3/2/1计分，汇总为六维能力百分比，再按维度权重得到商业综合分。</p>
+            <em>{business.totalScore}分 · {business.level.level}</em>
+          </article>
+          <article>
+            <span>02</span>
+            <strong>18品类权重匹配</strong>
+            <p>每个女性赛道都有独立六维权重，按基础匹配、优势共振和短板风险计算后排序。</p>
+            <em>{primaryCategory.name} · {primaryCategory.match}%</em>
+          </article>
+          <article>
+            <span>03</span>
+            <strong>12题AI工具诊断</strong>
+            <p>按提示词、内容生产、自动化、私域、复盘和成本六项生成工具短板。</p>
+            <em>{ai.weakest} · {ai.percent[ai.weakest]}分</em>
+          </article>
+        </div>
+
+        <div className="report-detail-grid">
+          <div className="dimension-report-list">
+            <h3>六维能力剖面</h3>
+            {dimensionReport.map((item) => (
+              <article className={`dimension-report-row ${item.tier.tone}`} key={item.dimension}>
+                <div className="dimension-row-top">
+                  <strong>{item.dimension}</strong>
+                  <span>{item.score}分 · 权重{item.weight}% · {item.tier.label}</span>
+                </div>
+                <div className="match-bar" aria-hidden="true">
+                  <i style={{ width: `${item.score}%` }} />
+                </div>
+                <p>{item.insight}</p>
+              </article>
+            ))}
+          </div>
+
+          <div className="category-rationale-grid">
+            <h3>Top3推荐依据</h3>
+            {categoryRationales.map((category) => (
+              <article className="rationale-card" key={category.name}>
+                <div className="rationale-title">
+                  <span>0{category.rank}</span>
+                  <strong>{category.name}</strong>
+                  <em>{category.match}%</em>
+                </div>
+                <p>{category.reason}</p>
+                <div className="driver-row">
+                  {category.drivers.map((driver) => (
+                    <span key={driver.dimension}>{driver.dimension} {driver.contribution}</span>
+                  ))}
+                </div>
+                <dl>
+                  <div><dt>市场</dt><dd>{category.market}</dd></div>
+                  <div><dt>增速</dt><dd>{category.growth}</dd></div>
+                  <div><dt>门槛</dt><dd>{category.gate}</dd></div>
+                  <div><dt>收入</dt><dd>{category.income}</dd></div>
+                </dl>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="card-bottom-grid">
         <div className="all-match-panel">
           <h2>18品类匹配结果</h2>
           <div className="category-grid compact">
-            {categoryWeights.map((category, index) => (
+            {business.categoryMatches.map((category, index) => (
               <button type="button" key={category.name}>
                 <span>{String(index + 1).padStart(2, "0")}</span>
                 <strong>{category.short}</strong>
-                <small>{index < top.length ? top[index]?.match : Math.max(33, 78 - index * 3)}%</small>
+                <small>{category.match}%</small>
               </button>
             ))}
           </div>
