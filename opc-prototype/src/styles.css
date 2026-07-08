@@ -5459,20 +5459,25 @@ a {
     min-width: 0;
     min-height: 44px;
     padding: 0 4px;
-    font-size: 11px;
+    font-size: 10px;
   }
 
   .auth-pill {
     grid-column: 2;
     grid-row: 1;
     justify-self: end;
-    max-width: 104px;
+    max-width: 76px;
     min-height: 44px;
-    padding: 0 14px;
+    padding: 0 18px;
     overflow: hidden;
     box-shadow: none;
-    font-size: 14px;
+    font-size: 0;
     white-space: nowrap;
+  }
+
+  .auth-pill::before {
+    content: "登录";
+    font-size: 14px;
   }
 
   .page-shell.editorial-home {
