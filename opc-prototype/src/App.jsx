@@ -8,7 +8,6 @@ import {
   MagicWand,
   Target,
 } from "@phosphor-icons/react";
-import dossierImage from "./assets/opc-editorial-dossier.webp";
 
 const dimensions = [
   "内容能力",
@@ -334,16 +333,76 @@ function MobileOutcomeCard({ preview }) {
 }
 
 function DossierPreview({ preview }) {
+  const top = preview.recommendedCategories.slice(0, 3);
+
   return (
     <figure className="editorial-visual luxury-dossier" aria-label="个人OPC定位卡高端预览">
-      <img
-        src={dossierImage}
-        alt={`个人OPC定位卡样例，${preview.level.level}${preview.level.name}`}
-        loading="eager"
-      />
-      <figcaption className="luxury-caption">
-        <span>定位卡样例</span>
-        <strong>{preview.level.level} · {preview.level.name}</strong>
+      <div className="premium-stage">
+        <div className="stage-rail">
+          <span>LEADER</span>
+          <strong>OPC CATEGORY</strong>
+        </div>
+
+        <article className="premium-dossier-card">
+          <div className="premium-card-top">
+            <span className="mini-brand">她</span>
+            <div>
+              <strong>她智汇</strong>
+              <small>HUMAN LEVERAGE PLATFORM</small>
+            </div>
+            <em>{preview.level.level}</em>
+          </div>
+
+          <div className="premium-card-title">
+            <span>PERSONAL OPC POSITIONING CARD</span>
+            <h2>个人OPC定位卡</h2>
+          </div>
+
+          <div className="premium-score-board">
+            <div>
+              <span>她信分</span>
+              <strong>{creditScore(preview)}</strong>
+              <small>商业潜力综合分</small>
+            </div>
+            <div>
+              <span>OPC等级</span>
+              <strong>{preview.level.level}</strong>
+              <small>{preview.level.name}</small>
+            </div>
+          </div>
+
+          <div className="premium-category-list">
+            <span>推荐品类 Top3</span>
+            {top.map((category, index) => (
+              <div className="premium-category-row" key={category.name}>
+                <em>{String(index + 1).padStart(2, "0")}</em>
+                <strong>{category.name}</strong>
+                <i><b style={{ width: `${category.match}%` }} /></i>
+                <small>{category.match}%</small>
+              </div>
+            ))}
+          </div>
+
+          <div className="premium-card-foot">
+            <div>
+              <span>优势维度</span>
+              <strong>{preview.strongestDim}</strong>
+            </div>
+            <div>
+              <span>下一步</span>
+              <strong>用AI工具把内容、私域和交付做成流程</strong>
+            </div>
+          </div>
+        </article>
+
+        <aside className="premium-side-panel">
+          <span>COMMERCIAL SIGNAL</span>
+          <strong>{top[0].short}</strong>
+          <small>{top[0].market}市场 · {top[0].growth}增长 · {top[0].gate}</small>
+        </aside>
+      </div>
+      <figcaption className="sr-only">
+        定位卡样例：{preview.level.level}，{preview.level.name}，推荐品类为{top.map((category) => category.short).join("、")}。
       </figcaption>
     </figure>
   );
