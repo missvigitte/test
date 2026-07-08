@@ -5393,6 +5393,13 @@ a {
 @media (max-width: 760px) {
   html {
     scroll-behavior: auto;
+    overflow-x: hidden;
+  }
+
+  body,
+  #root {
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   .site-header {
@@ -5405,12 +5412,25 @@ a {
     gap: 10px;
     border-bottom: 1px solid rgba(112, 77, 55, 0.12);
     background: rgba(251, 247, 239, 0.96);
+    overflow: hidden;
   }
 
   .brand {
     grid-column: 1;
     grid-row: 1;
+    min-width: 0;
     min-height: 44px;
+  }
+
+  .brand > span:last-child {
+    min-width: 0;
+  }
+
+  .brand small {
+    max-width: 154px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .site-header nav {
@@ -5435,10 +5455,14 @@ a {
   .auth-pill {
     grid-column: 2;
     grid-row: 1;
+    justify-self: end;
+    max-width: 104px;
     min-height: 44px;
     padding: 0 14px;
+    overflow: hidden;
     box-shadow: none;
     font-size: 14px;
+    white-space: nowrap;
   }
 
   .page-shell.editorial-home {
@@ -5504,9 +5528,28 @@ a {
   }
 
   .editorial-home .mobile-outcome-card {
+    width: 100%;
+    max-width: 100%;
     margin-top: 20px;
+    overflow: hidden;
     border-radius: 0;
     box-shadow: 0 16px 42px rgba(59, 23, 40, 0.08);
+  }
+
+  .mobile-outcome-main,
+  .mobile-outcome-foot {
+    min-width: 0;
+  }
+
+  .mobile-outcome-main > *,
+  .mobile-outcome-foot > * {
+    min-width: 0;
+  }
+
+  .mobile-outcome-foot strong {
+    max-width: 58%;
+    overflow-wrap: anywhere;
+    text-align: right;
   }
 
   .editorial-home .hero-actions {
