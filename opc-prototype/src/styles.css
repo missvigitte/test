@@ -4680,6 +4680,16 @@ body {
   }
 }
 
+@media (min-width: 391px) and (max-width: 520px) {
+  .site-header,
+  .page-shell.editorial-home {
+    width: 390px;
+    max-width: 390px;
+    margin-right: auto;
+    margin-left: 0;
+  }
+}
+
 /* Premium atelier homepage rebuild */
 .editorial-home .editorial-hero {
   min-height: clamp(660px, 45vw, 740px);
