@@ -17,7 +17,6 @@ import {
   Trash,
   UsersThree,
 } from "@phosphor-icons/react";
-import bridalAtelierHero from "./assets/bridal-atelier-hero.webp";
 import fruitWineWave from "./assets/fruit-wine-wave.webp";
 
 const dimensions = [
@@ -441,10 +440,9 @@ function AppHeader({ view, setView, adminLoggedIn }) {
   return (
     <header className="site-header">
       <button className="brand" type="button" onClick={() => setView("home")} aria-label="返回首页">
-        <span className="brand-mark">她</span>
-        <span>
+        <span className="brand-wordmark">
           <strong>她智汇</strong>
-          <small>Human Leverage Platform</small>
+          <small>Human Leverage Atelier</small>
         </span>
       </button>
       <nav aria-label="主导航">
@@ -499,30 +497,38 @@ function FlowStepper({ current, completed = [] }) {
 function HomePage({ setView, businessResult }) {
   const preview = businessResult ?? calculateBusiness(fallbackAnswers(commercialQuestions));
   return (
-    <main className="page-shell home-shell editorial-home">
+    <main className="page-shell home-shell editorial-home" style={{ "--home-wave-bg": `url(${fruitWineWave})` }}>
       <section className="editorial-hero">
+        <div className="hero-flow-wash" aria-hidden="true" />
         <div className="editorial-copy">
-          <span className="eyebrow">免费 · 私人商业定位测评</span>
+          <span className="eyebrow">PRIVATE OPC INTAKE · 3分钟</span>
           <h1>
-            测出你的
-            <br />
-            <span className="hero-title-accent">OPC定位卡</span>
+            <span className="desktop-hero-title">
+              <span>为你的商业感</span>
+              <span className="hero-title-accent">定一张定位卡</span>
+            </span>
+            <span className="mobile-hero-title">
+              <span>为你的商业感</span>
+              <span className="hero-title-accent">定一张定位卡</span>
+            </span>
           </h1>
           <p>
             <span className="desktop-hero-copy">
-              从商业能力、AI工具短板到18个女性赛道建议，生成一张像私人影像档案一样清晰的商业定位卡。
+              像进入一间私人商业定位室，从商业能力、AI工具短板到18个女性赛道建议，生成一张清晰、可启动的个人OPC定位卡。
             </span>
             <span className="mobile-hero-copy">
-              3分钟看清适合你的赛道、AI工具短板和下一步启动路径。
+              3分钟看清你的女性赛道、AI工具短板与下一步启动路径。
             </span>
           </p>
-          <div className="mobile-atelier-image" aria-hidden="true">
-            <img src={bridalAtelierHero} alt="" />
+          <div className="hero-meta-line" aria-label="测评包含内容">
+            <span>18个女性赛道</span>
+            <span>AI工具短板</span>
+            <span>L1-L9 OPC等级</span>
           </div>
           <MobileOutcomeCard preview={preview} />
           <div className="hero-actions">
             <button className="primary-btn" type="button" onClick={() => setView("business")}>
-              开始免费测评 <ArrowRight size={18} />
+              开始私人测评 <ArrowRight size={18} />
             </button>
             <button className="ghost-btn" type="button" onClick={() => setView("card")}>
               查看定位卡样例
@@ -614,19 +620,19 @@ function DossierPreview({ preview }) {
 
   return (
     <figure className="editorial-visual luxury-dossier" aria-label="个人OPC定位卡高端预览">
-      <img className="atelier-hero-photo" src={bridalAtelierHero} alt="" aria-hidden="true" />
+      <img className="atelier-hero-photo atelier-wave-photo" src={fruitWineWave} alt="" aria-hidden="true" />
       <div className="premium-stage">
         <div className="stage-rail">
-          <span>LEADER</span>
-          <strong>OPC CATEGORY</strong>
+          <span>PRIVATE</span>
+          <strong>OPC INTAKE</strong>
         </div>
 
         <article className="premium-dossier-card">
           <div className="premium-card-top">
-            <span className="mini-brand">她</span>
+            <span className="mini-wordmark">她智汇</span>
             <div>
-              <strong>她智汇</strong>
-              <small>HUMAN LEVERAGE PLATFORM</small>
+              <strong>Human Leverage Atelier</strong>
+              <small>PRIVATE COMMERCIAL DOSSIER</small>
             </div>
             <em>{preview.level.level}</em>
           </div>
@@ -674,10 +680,16 @@ function DossierPreview({ preview }) {
         </article>
 
         <aside className="premium-side-panel">
-          <span>COMMERCIAL SIGNAL</span>
+          <span>TOP SIGNAL</span>
           <strong>{top[0].short}</strong>
           <small>{top[0].market}市场 · {top[0].growth}增长 · {top[0].gate}</small>
         </aside>
+
+        <div className="loading-storyboard" aria-hidden="true">
+          <span>01</span>
+          <span>02</span>
+          <span>03</span>
+        </div>
       </div>
       <figcaption className="sr-only">
         定位卡样例：{preview.level.level}，{preview.level.name}，推荐品类为{top.map((category) => category.short).join("、")}。
