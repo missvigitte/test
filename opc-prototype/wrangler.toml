@@ -1,3 +1,14 @@
 name = "opc-ai"
-pages_build_output_dir = "dist"
-compatibility_date = "2026-07-08"
+main = "src/worker.js"
+compatibility_date = "2026-07-09"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "opc-ai-records"
+database_id = "37fbf873-d154-42cc-8d1f-023c0dae48b0"
+migrations_dir = "migrations"

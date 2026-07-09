@@ -113,6 +113,9 @@ const stepLabels = [
 
 const ADMIN_SESSION_KEY = "opc-admin-session";
 const ADMIN_RECORDS_KEY = "opc-admin-records";
+const ADMIN_ACCESS_KEY = "opc-admin-access-key";
+const LEAD_INFO_KEY = "opc-lead-info";
+const DEFAULT_ADMIN_PASSWORD = "opc2026";
 
 const sampleAdminRecords = [
   {
@@ -213,16 +216,19 @@ function formatAdminTime(date = new Date()) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function buildAdminRecord(recordId, business, ai) {
+function buildAdminRecord(recordId, business, ai, leadInfo = {}) {
   const primary = business.recommendedCategories[0];
+  const name = leadInfo.name?.trim() || "当前访客";
+  const phone = leadInfo.phone?.trim() || "未留资";
   return {
     id: recordId,
-    name: "当前访客",
-    phone: "未留资",
+    name,
+    phone,
     createdAt: formatAdminTime(),
     level: business.level.level,
     levelName: business.level.name,
     businessScore: business.totalScore,
+    aiScore: ai.total,
     credit: creditScore(business),
     category: primary.name,
     match: primary.match,
@@ -238,6 +244,113 @@ function upsertAdminRecord(record) {
   const records = readAdminRecords();
   const next = [record, ...records.filter((item) => item.id !== record.id)];
   writeAdminRecords(next);
+}
+
+function readStoredLeadInfo() {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = window.sessionStorage.getItem(LEAD_INFO_KEY);
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredLeadInfo(info) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(LEAD_INFO_KEY, JSON.stringify(info));
+  } catch {
+    // Session storage is a convenience only; the form state still works.
+  }
+}
+
+function sanitizeLeadInfo(info) {
+  return {
+    name: String(info?.name ?? "").trim().replace(/\s+/g, ""),
+    phone: String(info?.phone ?? "").trim().replace(/[^\d+]/g, ""),
+  };
+}
+
+function validateLeadInfo(info) {
+  const clean = sanitizeLeadInfo(info);
+  if (clean.name.length < 1 || clean.name.length > 24) return "请填写你的姓名。";
+  if (!/^\+?\d{6,20}$/.test(clean.phone)) return "请填写有效手机号。";
+  return "";
+}
+
+function hasLeadInfo(info) {
+  return !validateLeadInfo(info);
+}
+
+function getAdminAccessKey() {
+  if (typeof window === "undefined") return DEFAULT_ADMIN_PASSWORD;
+  try {
+    return window.localStorage.getItem(ADMIN_ACCESS_KEY) || DEFAULT_ADMIN_PASSWORD;
+  } catch {
+    return DEFAULT_ADMIN_PASSWORD;
+  }
+}
+
+async function requestJson(path, options = {}) {
+  const response = await fetch(path, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || payload.ok === false) {
+    throw new Error(payload.error || `请求失败：${response.status}`);
+  }
+  return payload;
+}
+
+async function saveAssessmentRecord({ record, business, ai, businessAnswers, aiAnswers }) {
+  upsertAdminRecord(record);
+  const payload = await requestJson("/api/records", {
+    method: "POST",
+    body: JSON.stringify({
+      record,
+      businessResult: business,
+      aiResult: ai,
+      businessAnswers,
+      aiAnswers,
+    }),
+  });
+  if (payload.record) upsertAdminRecord(payload.record);
+  return payload.record;
+}
+
+async function fetchAdminRecords() {
+  const payload = await requestJson("/api/records", {
+    headers: { "x-admin-key": getAdminAccessKey() },
+  });
+  return Array.isArray(payload.records) ? payload.records : [];
+}
+
+async function loginAdmin(account, password) {
+  return requestJson("/api/admin/login", {
+    method: "POST",
+    body: JSON.stringify({ account, password }),
+  });
+}
+
+async function updateAdminRecord(id, patch) {
+  const payload = await requestJson(`/api/records/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "x-admin-key": getAdminAccessKey() },
+    body: JSON.stringify(patch),
+  });
+  return payload.record;
+}
+
+async function deleteAdminRecord(id) {
+  return requestJson(`/api/records/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: { "x-admin-key": getAdminAccessKey() },
+  });
 }
 
 function scoreFromOption(optionIndex) {
@@ -308,7 +421,8 @@ function calculateAi(answers) {
   const percent = Object.fromEntries(areas.map((area) => [area, Math.round((raw[area] / (counts[area] * 4)) * 100)]));
   const weakest = areas.reduce((low, area) => percent[area] < percent[low] ? area : low, areas[0]);
   const strongest = areas.reduce((top, area) => percent[area] > percent[top] ? area : top, areas[0]);
-  return { areas, percent, weakest, strongest };
+  const total = Math.round(areas.reduce((sum, area) => sum + percent[area], 0) / areas.length);
+  return { areas, percent, weakest, strongest, total };
 }
 
 const dimensionInsightCopy = {
@@ -429,7 +543,7 @@ function buildBespokeRoute(business, ai) {
   ];
 }
 
-function AppHeader({ view, setView, adminLoggedIn }) {
+function AppHeader({ view, onNavigate, adminLoggedIn }) {
   const nav = [
     ["home", "首页"],
     ["business", "商业测评"],
@@ -439,7 +553,7 @@ function AppHeader({ view, setView, adminLoggedIn }) {
 
   return (
     <header className="site-header">
-      <button className="brand" type="button" onClick={() => setView("home")} aria-label="返回首页">
+      <button className="brand" type="button" onClick={() => onNavigate("home")} aria-label="返回首页">
         <span className="brand-wordmark">
           <strong>她智汇</strong>
           <small>Human Leverage Atelier</small>
@@ -452,7 +566,7 @@ function AppHeader({ view, setView, adminLoggedIn }) {
             key={key}
             type="button"
             aria-current={view === key ? "page" : undefined}
-            onClick={() => setView(key)}
+            onClick={() => onNavigate(key)}
           >
             {label}
           </button>
@@ -462,7 +576,7 @@ function AppHeader({ view, setView, adminLoggedIn }) {
         className="auth-pill"
         type="button"
         aria-current={view === "admin" || view === "admin-login" ? "page" : undefined}
-        onClick={() => setView(adminLoggedIn ? "admin" : "admin-login")}
+        onClick={() => onNavigate(adminLoggedIn ? "admin" : "admin-login")}
       >
         {adminLoggedIn ? "管理后台" : "管理员登录"}
       </button>
@@ -494,7 +608,7 @@ function FlowStepper({ current, completed = [] }) {
   );
 }
 
-function HomePage({ setView, businessResult }) {
+function HomePage({ setView, onStart, businessResult }) {
   const preview = businessResult ?? calculateBusiness(fallbackAnswers(commercialQuestions));
   return (
     <main className="page-shell home-shell editorial-home" style={{ "--home-wave-bg": `url(${fruitWineWave})` }}>
@@ -527,7 +641,7 @@ function HomePage({ setView, businessResult }) {
           </div>
           <MobileOutcomeCard preview={preview} />
           <div className="hero-actions">
-            <button className="primary-btn" type="button" onClick={() => setView("business")}>
+            <button className="primary-btn" type="button" onClick={onStart}>
               开始私人测评 <ArrowRight size={18} />
             </button>
             <button className="ghost-btn" type="button" onClick={() => setView("card")}>
@@ -572,11 +686,79 @@ function HomePage({ setView, businessResult }) {
           <span className="eyebrow">18个女性赛道候选池</span>
           <h2>女性商业<br />赛道图谱</h2>
           <p>从品类出发，找到最适合你的商业机会</p>
-          <button className="primary-btn compact" type="button" onClick={() => setView("business")}>
+          <button className="primary-btn compact" type="button" onClick={onStart}>
             查看你的赛道建议 <ArrowRight size={16} />
           </button>
         </div>
         <CategoryGrid />
+      </section>
+    </main>
+  );
+}
+
+function LeadCapture({ initialLead, onSubmit, onBack }) {
+  const [form, setForm] = useState(() => sanitizeLeadInfo(initialLead || {}));
+  const [error, setError] = useState("");
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    const clean = sanitizeLeadInfo(form);
+    const message = validateLeadInfo(clean);
+    if (message) {
+      setError(message);
+      return;
+    }
+    setError("");
+    onSubmit(clean);
+  }
+
+  return (
+    <main className="page-shell lead-shell" style={{ "--lead-wave-bg": `url(${fruitWineWave})` }}>
+      <section className="lead-intake-card" aria-labelledby="lead-intake-title">
+        <div className="lead-intake-copy">
+          <span className="eyebrow">PRIVATE OPC INTAKE</span>
+          <h1 id="lead-intake-title">先建立你的私人测评档案</h1>
+          <p>
+            填写姓名和手机号后开始测评。完成后，商业能力、AI工具短板、OPC等级和18个女性赛道推荐会归入你的私人定位档案。
+          </p>
+          <div className="lead-assurance" aria-label="测评数据说明">
+            <span>3分钟完成</span>
+            <span>生成定位卡</span>
+            <span>仅用于OPC诊断跟进</span>
+          </div>
+        </div>
+
+        <form className="lead-form-panel" onSubmit={handleSubmit}>
+          <label>
+            <span>姓名</span>
+            <input
+              autoComplete="name"
+              value={form.name}
+              onChange={(event) => setForm({ ...form, name: event.target.value })}
+              placeholder="请输入姓名"
+            />
+          </label>
+          <label>
+            <span>手机号</span>
+            <input
+              autoComplete="tel"
+              inputMode="tel"
+              value={form.phone}
+              onChange={(event) => setForm({ ...form, phone: event.target.value })}
+              placeholder="请输入手机号"
+            />
+          </label>
+          {error && <p className="lead-error" role="alert">{error}</p>}
+          <button className="primary-btn" type="submit">
+            开始测评 <ArrowRight size={18} />
+          </button>
+          <button className="ghost-btn" type="button" onClick={onBack}>
+            返回首页
+          </button>
+          <p className="lead-privacy-note">
+            你的资料仅用于查看报告和跟进服务，不会展示在公开页面。
+          </p>
+        </form>
       </section>
     </main>
   );
@@ -977,23 +1159,38 @@ function DimensionBand({ scores }) {
   );
 }
 
-function PositioningCard({ businessResult, aiResult, setView, sessionRecordId }) {
+function PositioningCard({ businessResult, aiResult, setView, sessionRecordId, leadInfo, businessAnswers, aiAnswers }) {
   const business = businessResult ?? calculateBusiness(fallbackAnswers(commercialQuestions));
   const ai = aiResult ?? calculateAi(fallbackAnswers(aiQuestions));
   const [copied, setCopied] = useState(false);
   const [insightOpen, setInsightOpen] = useState(false);
+  const savedRecordKey = useRef("");
   const top = business.recommendedCategories;
   const primaryCategory = top[0];
   const isDemoReport = !businessResult || !aiResult;
+  const profileName = isDemoReport ? "林然" : leadInfo?.name || "当前访客";
+  const profileInitial = profileName.slice(0, 1) || "她";
   const dimensionReport = buildDimensionReport(business);
   const categoryRationales = buildCategoryRationales(business, ai);
   const bespokeRoute = buildBespokeRoute(business, ai);
   const shareText = `我刚测了OPC商业定位，结果是${business.level.level}${business.level.name}。最推荐我从${top[0].name}切入，AI工具短板是${ai.weakest}。`;
 
   useEffect(() => {
-    if (isDemoReport) return;
-    upsertAdminRecord(buildAdminRecord(sessionRecordId, business, ai));
-  }, [ai, business, isDemoReport, sessionRecordId]);
+    if (isDemoReport || !hasLeadInfo(leadInfo)) return;
+    const record = buildAdminRecord(sessionRecordId, business, ai, leadInfo);
+    const currentKey = `${record.id}:${record.businessScore}:${record.aiScore}:${record.phone}`;
+    if (savedRecordKey.current === currentKey) return;
+    savedRecordKey.current = currentKey;
+    saveAssessmentRecord({
+      record,
+      business,
+      ai,
+      businessAnswers,
+      aiAnswers,
+    }).catch(() => {
+      savedRecordKey.current = "";
+    });
+  }, [ai, aiAnswers, business, businessAnswers, isDemoReport, leadInfo, sessionRecordId]);
 
   async function copyShareText() {
     try {
@@ -1016,9 +1213,9 @@ function PositioningCard({ businessResult, aiResult, setView, sessionRecordId })
     ctx.font = "700 34px 'Microsoft YaHei', sans-serif";
     ctx.fillText("个人OPC定位卡", 56, 76);
     ctx.font = "700 58px 'Microsoft YaHei', sans-serif";
-    ctx.fillText("林", 74, 175);
+    ctx.fillText(profileInitial, 74, 175);
     ctx.font = "700 32px 'Microsoft YaHei', sans-serif";
-    ctx.fillText(`林然 · ${business.level.level} ${business.level.name}`, 150, 148);
+    ctx.fillText(`${profileName} · ${business.level.level} ${business.level.name}`, 150, 148);
     ctx.font = "500 24px 'Microsoft YaHei', sans-serif";
     ctx.fillStyle = "#4A2C3A";
     ctx.fillText(`她信分 ${creditScore(business)} · 商业测评 ${business.totalScore}分`, 150, 190);
@@ -1051,9 +1248,9 @@ function PositioningCard({ businessResult, aiResult, setView, sessionRecordId })
         <section className="opc-master-card">
           <div className="profile-column">
             <div className="profile-row xl">
-              <span className="avatar">林</span>
+              <span className="avatar">{profileInitial}</span>
               <div>
-                <h2>林然</h2>
+                <h2>{profileName}</h2>
                 <p>{business.level.level} · {business.level.name}</p>
               </div>
             </div>
@@ -1273,21 +1470,40 @@ function PositioningCard({ businessResult, aiResult, setView, sessionRecordId })
 function AdminLogin({ setView, setAdminLoggedIn }) {
   const [form, setForm] = useState({ account: "", password: "" });
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     const account = form.account.trim();
-    if (account === "admin" && form.password === "opc2026") {
+    setSubmitting(true);
+    setError("");
+    try {
+      await loginAdmin(account, form.password);
       try {
         window.localStorage.setItem(ADMIN_SESSION_KEY, "true");
+        window.localStorage.setItem(ADMIN_ACCESS_KEY, form.password);
       } catch {
         // If storage is unavailable, keep the session for this render tree.
       }
       setAdminLoggedIn(true);
       setView("admin");
       return;
+    } catch {
+      if (account === "admin" && form.password === DEFAULT_ADMIN_PASSWORD) {
+        try {
+          window.localStorage.setItem(ADMIN_SESSION_KEY, "true");
+          window.localStorage.setItem(ADMIN_ACCESS_KEY, form.password);
+        } catch {
+          // If storage is unavailable, keep the session for this render tree.
+        }
+        setAdminLoggedIn(true);
+        setView("admin");
+        return;
+      }
+      setError("账号或密码不正确。演示账号为 admin / opc2026。");
+    } finally {
+      setSubmitting(false);
     }
-    setError("账号或密码不正确。演示账号为 admin / opc2026。");
   }
 
   return (
@@ -1317,8 +1533,8 @@ function AdminLogin({ setView, setAdminLoggedIn }) {
             />
           </label>
           {error && <p className="admin-error" role="alert">{error}</p>}
-          <button className="primary-btn" type="submit">
-            进入管理后台 <ShieldCheck size={18} />
+          <button className="primary-btn" type="submit" disabled={submitting}>
+            {submitting ? "正在验证" : "进入管理后台"} <ShieldCheck size={18} />
           </button>
         </form>
         <div className="admin-demo-note">
@@ -1335,10 +1551,36 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("全部");
   const [selectedId, setSelectedId] = useState(() => readAdminRecords()[0]?.id ?? "");
+  const [loading, setLoading] = useState(false);
+  const [remoteError, setRemoteError] = useState("");
 
   useEffect(() => {
     writeAdminRecords(records);
   }, [records]);
+
+  useEffect(() => {
+    if (!adminLoggedIn) return undefined;
+    let active = true;
+    async function loadRecords() {
+      setLoading(true);
+      try {
+        const remoteRecords = await fetchAdminRecords();
+        if (!active) return;
+        const nextRecords = remoteRecords.length ? remoteRecords : readAdminRecords();
+        setRecords(nextRecords);
+        setSelectedId((current) => current || nextRecords[0]?.id || "");
+        setRemoteError("");
+      } catch {
+        if (active) setRemoteError("数据库连接暂时不可用，当前显示本地缓存。");
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    loadRecords();
+    return () => {
+      active = false;
+    };
+  }, [adminLoggedIn]);
 
   const filteredRecords = useMemo(() => {
     const keyword = query.trim().toLowerCase();
@@ -1362,25 +1604,45 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
   const highIntentCount = records.filter((record) => record.credit >= 800 || ["L7", "L8", "L9"].includes(record.level)).length;
   const convertedCount = records.filter((record) => record.status === "已转化").length;
 
-  function updateRecord(id, patch) {
+  function updateRecordLocal(id, patch) {
     setRecords((current) => current.map((record) => (
       record.id === id ? { ...record, ...patch } : record
     )));
   }
 
-  function deleteRecord(id) {
+  async function persistRecord(id, patch) {
+    updateRecordLocal(id, patch);
+    try {
+      const updated = await updateAdminRecord(id, patch);
+      if (updated) updateRecordLocal(id, updated);
+      setRemoteError("");
+    } catch {
+      setRemoteError("这次修改没有同步到数据库，请稍后重试。");
+    }
+  }
+
+  async function deleteRecord(id) {
     const confirmed = window.confirm("确认删除这条用户记录吗？");
     if (!confirmed) return;
+    const previousRecords = records;
     setRecords((current) => current.filter((record) => record.id !== id));
     if (selectedId === id) {
       const next = records.find((record) => record.id !== id);
       setSelectedId(next?.id ?? "");
+    }
+    try {
+      await deleteAdminRecord(id);
+      setRemoteError("");
+    } catch {
+      setRecords(previousRecords);
+      setRemoteError("删除没有同步到数据库，请稍后重试。");
     }
   }
 
   function logout() {
     try {
       window.localStorage.removeItem(ADMIN_SESSION_KEY);
+      window.localStorage.removeItem(ADMIN_ACCESS_KEY);
     } catch {
       // Ignore storage errors.
     }
@@ -1409,7 +1671,8 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
         <div>
           <span className="document-kicker">OPC ADMIN CONSOLE</span>
           <h1>用户测评管理</h1>
-          <p>集中查看商业测评、AI工具短板、OPC等级、推荐品类和跟进状态。</p>
+          <p>{loading ? "正在同步最新测评记录..." : "集中查看商业测评、AI工具短板、OPC等级、推荐品类和跟进状态。"}</p>
+          {remoteError && <p className="admin-sync-note" role="status">{remoteError}</p>}
         </div>
         <button className="ghost-btn" type="button" onClick={logout}>
           <SignOut size={18} /> 退出
@@ -1472,7 +1735,7 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
                     <td>
                       <select
                         value={record.status}
-                        onChange={(event) => updateRecord(record.id, { status: event.target.value })}
+                        onChange={(event) => persistRecord(record.id, { status: event.target.value })}
                         aria-label={`${record.name}状态`}
                       >
                         {adminStatuses.map((status) => <option key={status}>{status}</option>)}
@@ -1481,7 +1744,7 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
                     <td>
                       <select
                         value={record.owner}
-                        onChange={(event) => updateRecord(record.id, { owner: event.target.value })}
+                        onChange={(event) => persistRecord(record.id, { owner: event.target.value })}
                         aria-label={`${record.name}顾问`}
                       >
                         {adminOwners.map((owner) => <option key={owner}>{owner}</option>)}
@@ -1533,15 +1796,16 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
               <span>跟进备注</span>
               <textarea
                 value={selectedRecord.note}
-                onChange={(event) => updateRecord(selectedRecord.id, { note: event.target.value })}
+                onChange={(event) => updateRecordLocal(selectedRecord.id, { note: event.target.value })}
+                onBlur={(event) => persistRecord(selectedRecord.id, { note: event.target.value })}
                 rows={5}
               />
             </label>
             <div className="admin-detail-actions">
-              <button type="button" className="primary-btn compact" onClick={() => updateRecord(selectedRecord.id, { status: "已联系" })}>
+              <button type="button" className="primary-btn compact" onClick={() => persistRecord(selectedRecord.id, { status: "已联系" })}>
                 标记已联系
               </button>
-              <button type="button" className="ghost-btn" onClick={() => updateRecord(selectedRecord.id, { status: "已转化" })}>
+              <button type="button" className="ghost-btn" onClick={() => persistRecord(selectedRecord.id, { status: "已转化" })}>
                 标记已转化
               </button>
             </div>
@@ -1659,7 +1923,8 @@ export function App() {
   const [view, setView] = useState("home");
   const [answers, setAnswers] = useState([]);
   const [aiAnswers, setAiAnswers] = useState([]);
-  const [sessionRecordId] = useState(() => `OPC-${Date.now().toString(36).toUpperCase()}`);
+  const [sessionRecordId, setSessionRecordId] = useState(() => `OPC-${Date.now().toString(36).toUpperCase()}`);
+  const [leadInfo, setLeadInfo] = useState(() => readStoredLeadInfo());
   const [adminLoggedIn, setAdminLoggedIn] = useState(() => {
     if (typeof window === "undefined") return false;
     try {
@@ -1681,10 +1946,47 @@ export function App() {
     window.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" });
   }, [view]);
 
+  function startAssessment() {
+    if (!hasLeadInfo(leadInfo)) {
+      setView("lead");
+      return;
+    }
+    setAnswers([]);
+    setAiAnswers([]);
+    setSessionRecordId(`OPC-${Date.now().toString(36).toUpperCase()}`);
+    setView("business");
+  }
+
+  function handleLeadSubmit(info) {
+    setLeadInfo(info);
+    writeStoredLeadInfo(info);
+    setAnswers([]);
+    setAiAnswers([]);
+    setSessionRecordId(`OPC-${Date.now().toString(36).toUpperCase()}`);
+    setView("business");
+  }
+
+  function navigateView(nextView) {
+    if (nextView === "business" || nextView === "ai") {
+      if (!hasLeadInfo(leadInfo)) {
+        setView("lead");
+        return;
+      }
+      if (nextView === "ai" && !businessResult) {
+        setView("business");
+        return;
+      }
+    }
+    setView(nextView);
+  }
+
   return (
     <>
-      <AppHeader view={view} setView={setView} adminLoggedIn={adminLoggedIn} />
-      {view === "home" && <HomePage setView={setView} businessResult={businessResult} />}
+      <AppHeader view={view} onNavigate={navigateView} adminLoggedIn={adminLoggedIn} />
+      {view === "home" && <HomePage setView={setView} onStart={startAssessment} businessResult={businessResult} />}
+      {view === "lead" && (
+        <LeadCapture initialLead={leadInfo} onSubmit={handleLeadSubmit} onBack={() => setView("home")} />
+      )}
       {view === "business" && (
         <BusinessAssessment answers={answers} setAnswers={setAnswers} setView={setView} businessResult={businessResult} />
       )}
@@ -1697,6 +1999,9 @@ export function App() {
           aiResult={aiResult}
           setView={setView}
           sessionRecordId={sessionRecordId}
+          leadInfo={leadInfo}
+          businessAnswers={answers}
+          aiAnswers={aiAnswers}
         />
       )}
       {view === "admin-login" && <AdminLogin setView={setView} setAdminLoggedIn={setAdminLoggedIn} />}
