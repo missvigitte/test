@@ -1,14 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
+  ChartLineUp,
   Check,
+  CheckCircle,
   Compass,
   Copy,
   DownloadSimple,
+  Eye,
+  FunnelSimple,
   MagicWand,
+  MagnifyingGlass,
+  ShieldCheck,
+  SignOut,
   Target,
+  Trash,
+  UsersThree,
 } from "@phosphor-icons/react";
 import bridalAtelierHero from "./assets/bridal-atelier-hero.webp";
+import fruitWineWave from "./assets/fruit-wine-wave.webp";
 
 const dimensions = [
   "内容能力",
@@ -101,6 +111,135 @@ const stepLabels = [
   { key: "ai", label: "AI工具能力测评", desc: "工具短板诊断" },
   { key: "card", label: "OPC定位卡", desc: "合成最终画像" },
 ];
+
+const ADMIN_SESSION_KEY = "opc-admin-session";
+const ADMIN_RECORDS_KEY = "opc-admin-records";
+
+const sampleAdminRecords = [
+  {
+    id: "OPC-20260709-001",
+    name: "林然",
+    phone: "138****2688",
+    createdAt: "2026-07-09 10:24",
+    level: "L7",
+    levelName: "品类领导者",
+    businessScore: 77,
+    credit: 828,
+    category: "女性服饰/穿搭",
+    match: 81,
+    aiWeakness: "自动化流程",
+    status: "待跟进",
+    owner: "未分配",
+    source: "免费测评",
+    note: "高意向，适合邀约品类诊断。",
+  },
+  {
+    id: "OPC-20260709-002",
+    name: "苏柚",
+    phone: "156****9031",
+    createdAt: "2026-07-09 11:08",
+    level: "L6",
+    levelName: "商业闭环者",
+    businessScore: 72,
+    credit: 808,
+    category: "果酒/低度酒",
+    match: 84,
+    aiWeakness: "私域工具",
+    status: "已联系",
+    owner: "Mia",
+    source: "定位卡样例",
+    note: "对果酒内容号感兴趣，需要补私域承接。",
+  },
+  {
+    id: "OPC-20260709-003",
+    name: "许棠",
+    phone: "177****6120",
+    createdAt: "2026-07-09 12:36",
+    level: "L5",
+    levelName: "应用构建者",
+    businessScore: 64,
+    credit: 776,
+    category: "香薰/家居香氛",
+    match: 78,
+    aiWeakness: "内容生产",
+    status: "待分配",
+    owner: "未分配",
+    source: "AI工具测评",
+    note: "审美强，内容连续性不足。",
+  },
+  {
+    id: "OPC-20260708-014",
+    name: "陈月",
+    phone: "189****4077",
+    createdAt: "2026-07-08 20:18",
+    level: "L4",
+    levelName: "项目执行者",
+    businessScore: 58,
+    credit: 752,
+    category: "母婴用品",
+    match: 76,
+    aiWeakness: "提示词库",
+    status: "已归档",
+    owner: "Nora",
+    source: "商业测评",
+    note: "适合先做低门槛测品。",
+  },
+];
+
+const adminStatuses = ["待跟进", "待分配", "已联系", "已转化", "已归档"];
+const adminOwners = ["未分配", "Mia", "Nora", "Luna", "Yvonne"];
+
+function readAdminRecords() {
+  if (typeof window === "undefined") return sampleAdminRecords;
+  try {
+    const stored = window.localStorage.getItem(ADMIN_RECORDS_KEY);
+    const parsed = stored ? JSON.parse(stored) : null;
+    return Array.isArray(parsed) && parsed.length ? parsed : sampleAdminRecords;
+  } catch {
+    return sampleAdminRecords;
+  }
+}
+
+function writeAdminRecords(records) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(ADMIN_RECORDS_KEY, JSON.stringify(records));
+  } catch {
+    // Local storage can be blocked in private browsing; the dashboard still works in memory.
+  }
+}
+
+function formatAdminTime(date = new Date()) {
+  const pad = (value) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function buildAdminRecord(recordId, business, ai) {
+  const primary = business.recommendedCategories[0];
+  return {
+    id: recordId,
+    name: "当前访客",
+    phone: "未留资",
+    createdAt: formatAdminTime(),
+    level: business.level.level,
+    levelName: business.level.name,
+    businessScore: business.totalScore,
+    credit: creditScore(business),
+    category: primary.name,
+    match: primary.match,
+    aiWeakness: ai.weakest,
+    status: "待跟进",
+    owner: "未分配",
+    source: "完整OPC测评",
+    note: `主推${primary.short}，优先补${ai.weakest}。`,
+  };
+}
+
+function upsertAdminRecord(record) {
+  const records = readAdminRecords();
+  const next = [record, ...records.filter((item) => item.id !== record.id)];
+  writeAdminRecords(next);
+}
 
 function scoreFromOption(optionIndex) {
   return [4, 3, 2, 1][optionIndex] ?? 1;
@@ -291,7 +430,7 @@ function buildBespokeRoute(business, ai) {
   ];
 }
 
-function AppHeader({ view, setView }) {
+function AppHeader({ view, setView, adminLoggedIn }) {
   const nav = [
     ["home", "首页"],
     ["business", "商业测评"],
@@ -321,7 +460,14 @@ function AppHeader({ view, setView }) {
           </button>
         ))}
       </nav>
-      <button className="auth-pill" type="button">登录 / 注册</button>
+      <button
+        className="auth-pill"
+        type="button"
+        aria-current={view === "admin" || view === "admin-login" ? "page" : undefined}
+        onClick={() => setView(adminLoggedIn ? "admin" : "admin-login")}
+      >
+        {adminLoggedIn ? "管理后台" : "管理员登录"}
+      </button>
     </header>
   );
 }
@@ -819,7 +965,7 @@ function DimensionBand({ scores }) {
   );
 }
 
-function PositioningCard({ businessResult, aiResult, setView }) {
+function PositioningCard({ businessResult, aiResult, setView, sessionRecordId }) {
   const business = businessResult ?? calculateBusiness(fallbackAnswers(commercialQuestions));
   const ai = aiResult ?? calculateAi(fallbackAnswers(aiQuestions));
   const [copied, setCopied] = useState(false);
@@ -831,6 +977,11 @@ function PositioningCard({ businessResult, aiResult, setView }) {
   const categoryRationales = buildCategoryRationales(business, ai);
   const bespokeRoute = buildBespokeRoute(business, ai);
   const shareText = `我刚测了OPC商业定位，结果是${business.level.level}${business.level.name}。最推荐我从${top[0].name}切入，AI工具短板是${ai.weakest}。`;
+
+  useEffect(() => {
+    if (isDemoReport) return;
+    upsertAdminRecord(buildAdminRecord(sessionRecordId, business, ai));
+  }, [ai, business, isDemoReport, sessionRecordId]);
 
   async function copyShareText() {
     try {
@@ -1107,6 +1258,300 @@ function PositioningCard({ businessResult, aiResult, setView }) {
   );
 }
 
+function AdminLogin({ setView, setAdminLoggedIn }) {
+  const [form, setForm] = useState({ account: "", password: "" });
+  const [error, setError] = useState("");
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    const account = form.account.trim();
+    if (account === "admin" && form.password === "opc2026") {
+      try {
+        window.localStorage.setItem(ADMIN_SESSION_KEY, "true");
+      } catch {
+        // If storage is unavailable, keep the session for this render tree.
+      }
+      setAdminLoggedIn(true);
+      setView("admin");
+      return;
+    }
+    setError("账号或密码不正确。演示账号为 admin / opc2026。");
+  }
+
+  return (
+    <main className="page-shell admin-shell admin-login-shell" style={{ "--admin-wave-bg": `url(${fruitWineWave})` }}>
+      <section className="admin-login-card" aria-labelledby="admin-login-title">
+        <span className="document-kicker">ADMIN ACCESS</span>
+        <h1 id="admin-login-title">管理员登录</h1>
+        <p>查看用户测评记录、跟进状态和品类意向，适合做线索管理和运营复盘。</p>
+        <form className="admin-login-form" onSubmit={handleSubmit}>
+          <label>
+            <span>管理员账号</span>
+            <input
+              autoComplete="username"
+              value={form.account}
+              onChange={(event) => setForm({ ...form, account: event.target.value })}
+              placeholder="admin"
+            />
+          </label>
+          <label>
+            <span>密码</span>
+            <input
+              autoComplete="current-password"
+              type="password"
+              value={form.password}
+              onChange={(event) => setForm({ ...form, password: event.target.value })}
+              placeholder="opc2026"
+            />
+          </label>
+          {error && <p className="admin-error" role="alert">{error}</p>}
+          <button className="primary-btn" type="submit">
+            进入管理后台 <ShieldCheck size={18} />
+          </button>
+        </form>
+        <div className="admin-demo-note">
+          <span>演示账号</span>
+          <strong>admin / opc2026</strong>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
+  const [records, setRecords] = useState(() => readAdminRecords());
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("全部");
+  const [selectedId, setSelectedId] = useState(() => readAdminRecords()[0]?.id ?? "");
+
+  useEffect(() => {
+    writeAdminRecords(records);
+  }, [records]);
+
+  const filteredRecords = useMemo(() => {
+    const keyword = query.trim().toLowerCase();
+    return records.filter((record) => {
+      const statusMatch = statusFilter === "全部" || record.status === statusFilter;
+      const keywordMatch = !keyword || [
+        record.name,
+        record.phone,
+        record.id,
+        record.category,
+        record.level,
+        record.aiWeakness,
+        record.owner,
+      ].some((value) => String(value).toLowerCase().includes(keyword));
+      return statusMatch && keywordMatch;
+    });
+  }, [query, records, statusFilter]);
+
+  const selectedRecord = records.find((record) => record.id === selectedId) ?? filteredRecords[0] ?? records[0];
+  const pendingCount = records.filter((record) => ["待跟进", "待分配"].includes(record.status)).length;
+  const highIntentCount = records.filter((record) => record.credit >= 800 || ["L7", "L8", "L9"].includes(record.level)).length;
+  const convertedCount = records.filter((record) => record.status === "已转化").length;
+
+  function updateRecord(id, patch) {
+    setRecords((current) => current.map((record) => (
+      record.id === id ? { ...record, ...patch } : record
+    )));
+  }
+
+  function deleteRecord(id) {
+    const confirmed = window.confirm("确认删除这条用户记录吗？");
+    if (!confirmed) return;
+    setRecords((current) => current.filter((record) => record.id !== id));
+    if (selectedId === id) {
+      const next = records.find((record) => record.id !== id);
+      setSelectedId(next?.id ?? "");
+    }
+  }
+
+  function logout() {
+    try {
+      window.localStorage.removeItem(ADMIN_SESSION_KEY);
+    } catch {
+      // Ignore storage errors.
+    }
+    setAdminLoggedIn(false);
+    setView("home");
+  }
+
+  if (!adminLoggedIn) {
+    return (
+      <main className="page-shell admin-shell" style={{ "--admin-wave-bg": `url(${fruitWineWave})` }}>
+        <section className="admin-login-card">
+          <span className="document-kicker">ADMIN ACCESS</span>
+          <h1>需要管理员登录</h1>
+          <p>登录后可以查看用户测评记录和管理跟进状态。</p>
+          <button className="primary-btn" type="button" onClick={() => setView("admin-login")}>
+            去登录 <ArrowRight size={18} />
+          </button>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <main className="page-shell admin-shell admin-dashboard-shell" style={{ "--admin-wave-bg": `url(${fruitWineWave})` }}>
+      <section className="admin-dashboard-head">
+        <div>
+          <span className="document-kicker">OPC ADMIN CONSOLE</span>
+          <h1>用户测评管理</h1>
+          <p>集中查看商业测评、AI工具短板、OPC等级、推荐品类和跟进状态。</p>
+        </div>
+        <button className="ghost-btn" type="button" onClick={logout}>
+          <SignOut size={18} /> 退出
+        </button>
+      </section>
+
+      <section className="admin-stat-grid" aria-label="后台关键指标">
+        <AdminStat icon={UsersThree} label="用户记录" value={records.length} />
+        <AdminStat icon={ChartLineUp} label="高意向用户" value={highIntentCount} />
+        <AdminStat icon={FunnelSimple} label="待处理" value={pendingCount} />
+        <AdminStat icon={CheckCircle} label="已转化" value={convertedCount} />
+      </section>
+
+      <section className="admin-workbench">
+        <div className="admin-records-panel">
+          <div className="admin-toolbar">
+            <label className="admin-search">
+              <MagnifyingGlass size={18} />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="搜索姓名、手机、品类、等级"
+                aria-label="搜索用户记录"
+              />
+            </label>
+            <label className="admin-filter">
+              <span>状态</span>
+              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="按状态筛选">
+                <option>全部</option>
+                {adminStatuses.map((status) => <option key={status}>{status}</option>)}
+              </select>
+            </label>
+          </div>
+
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>用户</th>
+                  <th>等级</th>
+                  <th>推荐品类</th>
+                  <th>AI短板</th>
+                  <th>状态</th>
+                  <th>顾问</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredRecords.map((record) => (
+                  <tr className={record.id === selectedRecord?.id ? "selected" : ""} key={record.id}>
+                    <td>
+                      <button className="admin-user-cell" type="button" onClick={() => setSelectedId(record.id)}>
+                        <strong>{record.name}</strong>
+                        <span>{record.phone}</span>
+                      </button>
+                    </td>
+                    <td><strong>{record.level}</strong><span>{record.credit}</span></td>
+                    <td>{record.category}<small>{record.match}%</small></td>
+                    <td>{record.aiWeakness}</td>
+                    <td>
+                      <select
+                        value={record.status}
+                        onChange={(event) => updateRecord(record.id, { status: event.target.value })}
+                        aria-label={`${record.name}状态`}
+                      >
+                        {adminStatuses.map((status) => <option key={status}>{status}</option>)}
+                      </select>
+                    </td>
+                    <td>
+                      <select
+                        value={record.owner}
+                        onChange={(event) => updateRecord(record.id, { owner: event.target.value })}
+                        aria-label={`${record.name}顾问`}
+                      >
+                        {adminOwners.map((owner) => <option key={owner}>{owner}</option>)}
+                      </select>
+                    </td>
+                    <td>
+                      <div className="admin-row-actions">
+                        <button type="button" onClick={() => setSelectedId(record.id)} aria-label={`查看${record.name}`}>
+                          <Eye size={16} />
+                        </button>
+                        <button type="button" onClick={() => deleteRecord(record.id)} aria-label={`删除${record.name}`}>
+                          <Trash size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!filteredRecords.length && <p className="admin-empty">没有符合条件的记录。</p>}
+          </div>
+        </div>
+
+        {selectedRecord && (
+          <aside className="admin-detail-panel" aria-label="用户记录详情">
+            <div className="admin-detail-top">
+              <span>{selectedRecord.id}</span>
+              <strong>{selectedRecord.status}</strong>
+            </div>
+            <div className="admin-profile-mini">
+              <span>{selectedRecord.name.slice(0, 1)}</span>
+              <div>
+                <h2>{selectedRecord.name}</h2>
+                <p>{selectedRecord.phone} · {selectedRecord.createdAt}</p>
+              </div>
+            </div>
+            <div className="admin-detail-metrics">
+              <Metric label="OPC等级" value={`${selectedRecord.level} ${selectedRecord.levelName}`} />
+              <Metric label="她信分" value={selectedRecord.credit} />
+              <Metric label="商业测评" value={`${selectedRecord.businessScore}分`} />
+            </div>
+            <div className="admin-detail-list">
+              <div><span>推荐品类</span><strong>{selectedRecord.category} · {selectedRecord.match}%</strong></div>
+              <div><span>AI工具短板</span><strong>{selectedRecord.aiWeakness}</strong></div>
+              <div><span>来源</span><strong>{selectedRecord.source}</strong></div>
+              <div><span>负责顾问</span><strong>{selectedRecord.owner}</strong></div>
+            </div>
+            <label className="admin-note-field">
+              <span>跟进备注</span>
+              <textarea
+                value={selectedRecord.note}
+                onChange={(event) => updateRecord(selectedRecord.id, { note: event.target.value })}
+                rows={5}
+              />
+            </label>
+            <div className="admin-detail-actions">
+              <button type="button" className="primary-btn compact" onClick={() => updateRecord(selectedRecord.id, { status: "已联系" })}>
+                标记已联系
+              </button>
+              <button type="button" className="ghost-btn" onClick={() => updateRecord(selectedRecord.id, { status: "已转化" })}>
+                标记已转化
+              </button>
+            </div>
+          </aside>
+        )}
+      </section>
+    </main>
+  );
+}
+
+function AdminStat({ icon: Icon, label, value }) {
+  return (
+    <article className="admin-stat-card">
+      <span><Icon size={24} weight="duotone" /></span>
+      <div>
+        <strong>{value}</strong>
+        <small>{label}</small>
+      </div>
+    </article>
+  );
+}
+
 function Metric({ label, value }) {
   return (
     <div className="metric">
@@ -1202,6 +1647,15 @@ export function App() {
   const [view, setView] = useState("home");
   const [answers, setAnswers] = useState([]);
   const [aiAnswers, setAiAnswers] = useState([]);
+  const [sessionRecordId] = useState(() => `OPC-${Date.now().toString(36).toUpperCase()}`);
+  const [adminLoggedIn, setAdminLoggedIn] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem(ADMIN_SESSION_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
 
   const businessResult = useMemo(() => (
     answers.length ? calculateBusiness(answers) : null
@@ -1217,7 +1671,7 @@ export function App() {
 
   return (
     <>
-      <AppHeader view={view} setView={setView} />
+      <AppHeader view={view} setView={setView} adminLoggedIn={adminLoggedIn} />
       {view === "home" && <HomePage setView={setView} businessResult={businessResult} />}
       {view === "business" && (
         <BusinessAssessment answers={answers} setAnswers={setAnswers} setView={setView} businessResult={businessResult} />
@@ -1225,7 +1679,22 @@ export function App() {
       {view === "ai" && (
         <AiAssessment aiAnswers={aiAnswers} setAiAnswers={setAiAnswers} setView={setView} businessResult={businessResult} aiResult={aiResult} />
       )}
-      {view === "card" && <PositioningCard businessResult={businessResult} aiResult={aiResult} setView={setView} />}
+      {view === "card" && (
+        <PositioningCard
+          businessResult={businessResult}
+          aiResult={aiResult}
+          setView={setView}
+          sessionRecordId={sessionRecordId}
+        />
+      )}
+      {view === "admin-login" && <AdminLogin setView={setView} setAdminLoggedIn={setAdminLoggedIn} />}
+      {view === "admin" && (
+        <AdminDashboard
+          adminLoggedIn={adminLoggedIn}
+          setAdminLoggedIn={setAdminLoggedIn}
+          setView={setView}
+        />
+      )}
     </>
   );
 }
