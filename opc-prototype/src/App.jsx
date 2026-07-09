@@ -1946,6 +1946,61 @@ export function App() {
     window.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" });
   }, [view]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const revealSelector = [
+      ".editorial-copy",
+      ".luxury-dossier",
+      ".chapter-strip",
+      ".taxonomy-section",
+      ".lead-intake-card",
+      ".flow-stepper",
+      ".side-summary",
+      ".question-panel",
+      ".category-pool",
+      ".dimension-band",
+      ".card-title-row",
+      ".opc-master-card",
+      ".action-column",
+      ".bespoke-route-section",
+      ".calculation-section",
+      ".card-bottom-grid",
+      ".admin-dashboard-head",
+      ".admin-stat-card",
+      ".admin-records-panel",
+      ".admin-detail-panel",
+    ].join(", ");
+    let observer;
+    const frame = window.requestAnimationFrame(() => {
+      const nodes = Array.from(document.querySelectorAll(revealSelector));
+      nodes.forEach((node, index) => {
+        node.classList.add("motion-reveal");
+        node.style.setProperty("--motion-order", String(Math.min(index, 8)));
+      });
+      if (reducedMotion || !("IntersectionObserver" in window)) {
+        nodes.forEach((node) => node.classList.add("is-visible"));
+        return;
+      }
+      observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        });
+      }, {
+        rootMargin: "0px 0px -8% 0px",
+        threshold: 0.12,
+      });
+      nodes.forEach((node) => observer.observe(node));
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      if (observer) observer.disconnect();
+    };
+  }, [view]);
+
   function startAssessment() {
     if (!hasLeadInfo(leadInfo)) {
       setView("lead");
