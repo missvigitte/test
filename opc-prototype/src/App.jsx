@@ -8,6 +8,7 @@ import {
   MagicWand,
   Target,
 } from "@phosphor-icons/react";
+import bridalAtelierHero from "./assets/bridal-atelier-hero.webp";
 
 const dimensions = [
   "内容能力",
@@ -355,7 +356,7 @@ function HomePage({ setView, businessResult }) {
     <main className="page-shell home-shell editorial-home">
       <section className="editorial-hero">
         <div className="editorial-copy">
-          <span className="eyebrow">免费 · 三步完成商业定位</span>
+          <span className="eyebrow">免费 · 私人商业定位测评</span>
           <h1>
             测出你的
             <br />
@@ -363,12 +364,15 @@ function HomePage({ setView, businessResult }) {
           </h1>
           <p>
             <span className="desktop-hero-copy">
-              从商业能力、AI工具短板到18个女性赛道建议，3分钟生成一张更适合女性创业者的个人商业定位卡。
+              从商业能力、AI工具短板到18个女性赛道建议，生成一张像私人影像档案一样清晰的商业定位卡。
             </span>
             <span className="mobile-hero-copy">
-              3分钟看清适合你的女性赛道、AI工具短板和下一步启动路径。
+              3分钟看清适合你的赛道、AI工具短板和下一步启动路径。
             </span>
           </p>
+          <div className="mobile-atelier-image" aria-hidden="true">
+            <img src={bridalAtelierHero} alt="" />
+          </div>
           <MobileOutcomeCard preview={preview} />
           <div className="hero-actions">
             <button className="primary-btn" type="button" onClick={() => setView("business")}>
@@ -414,10 +418,10 @@ function HomePage({ setView, businessResult }) {
       <section className="taxonomy-section">
         <div className="taxonomy-intro">
           <span className="eyebrow">18个女性赛道候选池</span>
-          <h2>18个女性赛道<br />品类宇宙</h2>
+          <h2>女性商业<br />赛道图谱</h2>
           <p>从品类出发，找到最适合你的商业机会</p>
           <button className="primary-btn compact" type="button" onClick={() => setView("business")}>
-            查看品类趋势报告 <ArrowRight size={16} />
+            查看你的赛道建议 <ArrowRight size={16} />
           </button>
         </div>
         <CategoryGrid />
@@ -464,6 +468,7 @@ function DossierPreview({ preview }) {
 
   return (
     <figure className="editorial-visual luxury-dossier" aria-label="个人OPC定位卡高端预览">
+      <img className="atelier-hero-photo" src={bridalAtelierHero} alt="" aria-hidden="true" />
       <div className="premium-stage">
         <div className="stage-rail">
           <span>LEADER</span>

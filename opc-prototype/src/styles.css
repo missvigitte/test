@@ -3002,6 +3002,56 @@ body {
   }
 }
 
+@media (min-width: 761px) {
+  .editorial-home .luxury-dossier .atelier-hero-photo {
+    position: absolute !important;
+    inset: 0 !important;
+    z-index: 0;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: inherit;
+    object-fit: cover;
+    object-position: 60% center;
+    opacity: 1 !important;
+    filter: saturate(0.84) contrast(0.96) brightness(1.02) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .editorial-home .editorial-copy {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .editorial-home .editorial-copy .eyebrow {
+    order: 1;
+  }
+
+  .editorial-home .editorial-copy h1 {
+    order: 2;
+  }
+
+  .editorial-home .editorial-copy p {
+    order: 3;
+  }
+
+  .editorial-home .hero-actions {
+    order: 4;
+    margin-top: 24px;
+  }
+
+  .mobile-atelier-image {
+    order: 5;
+    aspect-ratio: 1.86;
+    margin: 22px 0 12px;
+  }
+
+  .editorial-home .mobile-outcome-card {
+    order: 6;
+  }
+}
+
 /* Rendered hero report preview */
 .clean-dossier {
   display: grid;
@@ -8630,4 +8680,415 @@ body {
   height: 1px;
   background:
     linear-gradient(90deg, transparent, rgba(79, 23, 48, 0.66), transparent);
+}
+
+/* Bridal atelier art direction pass: fine-art photo studio, private album, quiet luxury. */
+:root {
+  --atelier-ink: #2b111b;
+  --atelier-plum: #4a172d;
+  --atelier-plum-soft: #755068;
+  --atelier-champagne: #a77b43;
+  --atelier-veil: #fff9ef;
+  --atelier-album: #f5ebdd;
+  --atelier-paper-line: rgba(122, 78, 48, 0.12);
+  --atelier-paper-line-strong: rgba(122, 78, 48, 0.19);
+  --atelier-photo-shadow: 0 42px 120px rgba(43, 17, 27, 0.14);
+  --atelier-card-shadow: 0 22px 70px rgba(43, 17, 27, 0.095);
+}
+
+body {
+  color: var(--atelier-ink);
+  background:
+    linear-gradient(180deg, #fff9ef 0%, #f7ecdf 52%, #fffaf2 100%);
+}
+
+.site-header {
+  width: min(1360px, calc(100% - 80px));
+  min-height: 86px;
+  padding-top: 18px;
+}
+
+.site-header::before {
+  background:
+    linear-gradient(180deg, rgba(255, 249, 239, 0.92), rgba(255, 249, 239, 0.76));
+  backdrop-filter: blur(18px);
+}
+
+.brand-mark {
+  border-color: rgba(167, 123, 67, 0.44);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.02)),
+    linear-gradient(160deg, #7b4c5f 0%, #48172d 78%);
+}
+
+.site-header nav {
+  min-height: 50px;
+  border-color: rgba(122, 78, 48, 0.11);
+  background:
+    linear-gradient(180deg, rgba(255, 252, 246, 0.86), rgba(246, 235, 221, 0.54));
+  box-shadow:
+    0 16px 42px rgba(43, 17, 27, 0.045),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.site-header nav button {
+  color: #614655;
+  font-weight: 680;
+}
+
+.site-header nav button.active {
+  color: var(--atelier-plum);
+  background:
+    linear-gradient(180deg, rgba(255, 252, 246, 0.98), rgba(247, 236, 223, 0.72));
+  box-shadow:
+    0 12px 30px rgba(43, 17, 27, 0.05),
+    inset 0 -2px 0 rgba(74, 23, 45, 0.62),
+    inset 0 1px 0 rgba(255, 255, 255, 0.84);
+}
+
+.mobile-atelier-image {
+  display: none;
+}
+
+.editorial-home .editorial-hero {
+  min-height: clamp(720px, 53vw, 860px);
+  padding-top: clamp(74px, 7.2vw, 118px);
+  padding-bottom: clamp(72px, 6vw, 104px);
+  border-color: rgba(122, 78, 48, 0.09);
+  background:
+    linear-gradient(90deg, rgba(255, 249, 239, 0.99) 0%, rgba(255, 249, 239, 0.94) 39%, rgba(246, 235, 221, 0.48) 100%),
+    linear-gradient(180deg, #fff9ef 0%, #f6ebdf 100%);
+}
+
+.editorial-home .editorial-hero::before {
+  background:
+    linear-gradient(90deg, rgba(255, 249, 239, 0.96) 0%, rgba(255, 249, 239, 0.74) 42%, rgba(255, 249, 239, 0.16) 76%, rgba(255, 249, 239, 0) 100%);
+}
+
+.editorial-home .editorial-copy {
+  align-self: center;
+}
+
+.editorial-home .editorial-copy .eyebrow {
+  color: #4d1a30;
+  border-color: rgba(167, 123, 67, 0.2);
+  background:
+    linear-gradient(180deg, rgba(255, 252, 246, 0.82), rgba(247, 236, 223, 0.52));
+  box-shadow: 0 12px 34px rgba(43, 17, 27, 0.038);
+}
+
+.editorial-home .editorial-copy h1 {
+  max-width: 610px;
+  color: var(--atelier-ink);
+  font-size: clamp(76px, 5.85vw, 112px);
+  text-shadow: 0 14px 38px rgba(43, 17, 27, 0.055);
+}
+
+.editorial-home .editorial-copy h1 .hero-title-accent {
+  background:
+    linear-gradient(92deg, #8e642f 0%, #c29d5d 42%, #755068 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.editorial-home .editorial-copy p {
+  max-width: 590px;
+  color: #563946;
+  font-size: 17px;
+  line-height: 1.96;
+}
+
+.editorial-home .primary-btn {
+  background:
+    linear-gradient(135deg, #642542 0%, #4a172d 64%, #2b111b 100%);
+  box-shadow:
+    0 20px 48px rgba(74, 23, 45, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.editorial-home .ghost-btn {
+  color: #4a172d;
+  border-color: rgba(122, 78, 48, 0.16);
+  background:
+    linear-gradient(180deg, rgba(255, 252, 246, 0.82), rgba(247, 236, 223, 0.44));
+}
+
+.atelier-hero-photo {
+  display: block;
+}
+
+@media (min-width: 761px) {
+  .editorial-home .editorial-hero {
+    grid-template-columns: minmax(420px, 565px) minmax(620px, 760px);
+    gap: clamp(48px, 5vw, 92px);
+  }
+
+  .editorial-home .luxury-dossier {
+    position: relative;
+    display: block !important;
+    align-self: center;
+    width: 100%;
+    height: clamp(590px, 45vw, 720px);
+    overflow: visible;
+    border: 1px solid rgba(122, 78, 48, 0.13);
+    border-radius: 8px;
+    background: #f8efe4;
+    box-shadow: var(--atelier-photo-shadow);
+    isolation: isolate;
+  }
+
+  .editorial-home .luxury-dossier::before {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: block;
+    border-radius: inherit;
+    background:
+      linear-gradient(90deg, rgba(255, 249, 239, 0.34) 0%, rgba(255, 249, 239, 0.04) 48%, rgba(43, 17, 27, 0.12) 100%),
+      linear-gradient(180deg, rgba(255, 252, 246, 0.06), rgba(43, 17, 27, 0.1));
+    content: "";
+    pointer-events: none;
+  }
+
+  .editorial-home .luxury-dossier::after {
+    position: absolute;
+    inset: 18px;
+    z-index: 2;
+    display: block;
+    border: 1px solid rgba(255, 252, 246, 0.5);
+    border-radius: 6px;
+    content: "";
+    pointer-events: none;
+  }
+
+  .atelier-hero-photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    object-fit: cover;
+    object-position: 61% center;
+    filter: saturate(0.86) contrast(0.96) brightness(1.02);
+  }
+
+  .premium-stage {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    width: 100%;
+    height: 100%;
+    transform: none !important;
+  }
+
+  .premium-dossier-card {
+    top: auto;
+    right: clamp(34px, 4vw, 62px);
+    bottom: clamp(32px, 4vw, 58px);
+    width: min(454px, 64%);
+    min-height: clamp(520px, 36vw, 612px);
+    border-color: rgba(255, 252, 246, 0.6);
+    background:
+      linear-gradient(145deg, rgba(255, 252, 246, 0.94), rgba(247, 236, 223, 0.8));
+    box-shadow:
+      var(--atelier-card-shadow),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.78);
+    transform: rotate(-1.7deg);
+    backdrop-filter: blur(10px);
+  }
+
+  .premium-dossier-card::after {
+    right: -16px;
+    width: 16px;
+    background:
+      linear-gradient(180deg, #6c3d54 0%, #42162a 100%);
+    opacity: 0.72;
+  }
+
+  .stage-rail {
+    top: 46px;
+    right: clamp(26px, 3vw, 48px);
+    background:
+      linear-gradient(180deg, rgba(181, 140, 78, 0.96), rgba(137, 95, 45, 0.96));
+    box-shadow: 0 18px 42px rgba(137, 95, 45, 0.14);
+  }
+
+  .premium-side-panel {
+    right: -24px;
+    bottom: 19%;
+    border-color: rgba(255, 252, 246, 0.5);
+    background:
+      linear-gradient(180deg, rgba(255, 252, 246, 0.82), rgba(247, 236, 223, 0.68));
+    box-shadow: 0 20px 52px rgba(43, 17, 27, 0.1);
+    backdrop-filter: blur(8px);
+  }
+
+  .editorial-home .chapter-strip,
+  .editorial-home .taxonomy-section {
+    background:
+      linear-gradient(180deg, rgba(255, 252, 246, 0.68), rgba(247, 236, 223, 0.46));
+  }
+}
+
+.chapter-list,
+.taxonomy-section,
+.side-summary,
+.question-panel,
+.category-pool,
+.opc-master-card,
+.all-match-panel,
+.deep-insight,
+.bespoke-route-section,
+.calculation-section {
+  border-color: var(--atelier-paper-line);
+  background:
+    linear-gradient(140deg, rgba(255, 252, 246, 0.9), rgba(247, 236, 223, 0.62));
+  box-shadow:
+    0 18px 58px rgba(43, 17, 27, 0.055),
+    inset 0 1px 0 rgba(255, 255, 255, 0.76);
+}
+
+.editorial-step,
+.category-grid button,
+.option-list button,
+.metric,
+.category-match,
+.insight-card,
+.action-tile,
+.formula-grid article,
+.dimension-report-row,
+.rationale-card {
+  border-color: rgba(122, 78, 48, 0.105);
+  background:
+    linear-gradient(180deg, rgba(255, 252, 246, 0.84), rgba(247, 236, 223, 0.44));
+  box-shadow:
+    0 9px 28px rgba(43, 17, 27, 0.032),
+    inset 0 1px 0 rgba(255, 255, 255, 0.64);
+}
+
+.question-panel h2,
+.card-title-row h1,
+.taxonomy-intro h2,
+.bespoke-intro h2,
+.calculation-head h2 {
+  color: var(--atelier-ink);
+  text-shadow: 0 12px 30px rgba(43, 17, 27, 0.05);
+}
+
+.question-panel h2::before,
+.card-title-row h1::after,
+.taxonomy-intro h2::after,
+.bespoke-intro h2::after,
+.calculation-head h2::after {
+  background:
+    linear-gradient(90deg, rgba(167, 123, 67, 0.62), rgba(167, 123, 67, 0.15), transparent);
+}
+
+.flow-step.active,
+.assessment-shell > .flow-stepper .flow-step.active,
+.card-shell > .flow-stepper .flow-step.active {
+  border-color: rgba(74, 23, 45, 0.18);
+  background:
+    linear-gradient(180deg, rgba(255, 252, 246, 0.96), rgba(247, 236, 223, 0.7));
+  box-shadow:
+    0 12px 32px rgba(43, 17, 27, 0.048),
+    inset 0 -2px 0 rgba(74, 23, 45, 0.58),
+    inset 0 1px 0 rgba(255, 255, 255, 0.84);
+}
+
+.assessment-shell > .flow-stepper .flow-step.active .step-dot,
+.card-shell > .flow-stepper .flow-step.active .step-dot {
+  background:
+    linear-gradient(145deg, #7a4a60, #4a172d);
+}
+
+.option-list button.selected {
+  border-color: rgba(74, 23, 45, 0.25);
+  box-shadow:
+    0 14px 36px rgba(43, 17, 27, 0.06),
+    inset 2px 0 0 rgba(74, 23, 45, 0.68);
+}
+
+@media (max-width: 760px) {
+  .site-header {
+    width: 100%;
+    min-height: 132px;
+    padding: 14px 14px 12px;
+  }
+
+  .site-header nav {
+    min-height: 48px;
+    padding: 4px;
+  }
+
+  .site-header nav button {
+    min-height: 44px;
+    font-size: 13px;
+  }
+
+  .editorial-home .editorial-hero {
+    padding: 34px 14px 40px;
+    background:
+      linear-gradient(180deg, rgba(255, 249, 239, 0.99) 0%, rgba(247, 236, 223, 0.82) 100%);
+  }
+
+  .editorial-home .editorial-copy h1 {
+    max-width: 360px;
+    margin-top: 24px;
+    font-size: clamp(46px, 11.7vw, 54px);
+    line-height: 1.02;
+  }
+
+  .editorial-home .editorial-copy p {
+    margin-top: 18px;
+    color: #5f4653;
+    font-size: 16px;
+    line-height: 1.76;
+  }
+
+  .mobile-atelier-image {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1.48;
+    margin: 22px 0 14px;
+    overflow: hidden;
+    border: 1px solid rgba(122, 78, 48, 0.12);
+    border-radius: 8px;
+    background: var(--atelier-album);
+    box-shadow:
+      0 18px 48px rgba(43, 17, 27, 0.075),
+      inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  }
+
+  .mobile-atelier-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 62% center;
+    filter: saturate(0.86) contrast(0.96) brightness(1.03);
+  }
+
+  .editorial-home .mobile-outcome-card {
+    margin-top: 12px;
+    background:
+      linear-gradient(140deg, rgba(255, 252, 246, 0.88), rgba(247, 236, 223, 0.58));
+    box-shadow: 0 14px 40px rgba(43, 17, 27, 0.058);
+  }
+
+  .editorial-home .hero-actions {
+    margin-top: 28px;
+  }
+
+  .chapter-list,
+  .taxonomy-section,
+  .side-summary,
+  .question-panel,
+  .category-pool,
+  .opc-master-card,
+  .all-match-panel,
+  .deep-insight,
+  .bespoke-route-section,
+  .calculation-section {
+    box-shadow: 0 12px 34px rgba(43, 17, 27, 0.047);
+  }
 }
