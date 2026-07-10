@@ -10716,6 +10716,390 @@ body {
   }
 }
 
+/* Mobile homepage direction: cinematic rose pour, selected concept 2. */
+.mobile-menu-toggle,
+.mobile-menu-panel,
+.mobile-pour-photo,
+.mobile-pour-stream,
+.mobile-dossier-peek {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .site-header {
+    position: relative;
+    z-index: 60;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    grid-template-rows: 1fr;
+    width: 100%;
+    min-height: 76px;
+    padding: 16px 18px;
+    border: 0;
+    overflow: visible;
+    background: #fbf6ee;
+    box-shadow: none;
+  }
+
+  .site-header::before {
+    display: none;
+  }
+
+  .site-header-home {
+    position: absolute;
+    inset: 0 0 auto;
+    background: transparent;
+  }
+
+  .site-header .brand {
+    grid-column: 1;
+    grid-row: 1;
+    width: fit-content;
+    min-height: 44px;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .site-header .brand-wordmark {
+    gap: 3px;
+  }
+
+  .site-header .brand strong,
+  .brand-wordmark strong {
+    font-family: var(--opc-font-title);
+    font-size: 25px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0;
+  }
+
+  .site-header .brand small,
+  .brand-wordmark small {
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: 0;
+  }
+
+  .site-header .desktop-nav,
+  .site-header > .auth-pill {
+    display: none !important;
+  }
+
+  .site-header > .auth-pill::after {
+    content: none !important;
+  }
+
+  .mobile-menu-toggle {
+    grid-column: 2;
+    grid-row: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    color: #4a1228;
+    background: transparent;
+    box-shadow: none;
+    touch-action: manipulation;
+  }
+
+  .mobile-menu-toggle:focus-visible {
+    outline: 2px solid #a47a3b;
+    outline-offset: 3px;
+  }
+
+  .mobile-menu-panel {
+    position: absolute;
+    top: 72px;
+    right: 14px;
+    left: 14px;
+    z-index: 80;
+    display: grid;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid rgba(74, 18, 40, 0.12);
+    border-radius: 8px;
+    background: #fffaf3;
+    box-shadow: 0 24px 70px rgba(55, 18, 34, 0.16);
+    animation: mobileMenuIn 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .site-header .mobile-menu-panel nav {
+    grid-column: auto;
+    grid-row: auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    width: 100%;
+    min-height: auto;
+    padding: 0;
+    border: 0;
+    overflow: visible;
+    background: transparent;
+  }
+
+  .site-header .mobile-menu-panel nav button,
+  .mobile-admin-link {
+    width: 100%;
+    min-height: 48px;
+    padding: 0 8px;
+    border: 0;
+    border-bottom: 1px solid rgba(74, 18, 40, 0.09);
+    border-radius: 0;
+    color: #4a1228;
+    background: transparent;
+    font-family: var(--opc-font-title);
+    font-size: 17px;
+    font-weight: 400;
+    text-align: left;
+  }
+
+  .site-header .mobile-menu-panel nav button.active {
+    color: #8b5e27;
+  }
+
+  .site-header .mobile-menu-panel nav button.active::after {
+    display: none;
+  }
+
+  .mobile-admin-link {
+    min-height: 44px;
+    border-bottom: 0;
+    color: #745c68;
+    font-family: var(--opc-font-body);
+    font-size: 13px;
+  }
+
+  .editorial-home {
+    width: 100%;
+    overflow-x: clip;
+  }
+
+  .editorial-home .editorial-hero {
+    position: relative;
+    isolation: isolate;
+    display: block;
+    width: 100%;
+    min-height: max(760px, 100svh);
+    margin: 0;
+    padding: clamp(214px, 31.4svh, 268px) 35px 88px;
+    overflow: hidden;
+    background: #fbf6ee;
+    box-shadow: none;
+  }
+
+  .editorial-home .editorial-hero.motion-reveal,
+  .editorial-home .editorial-hero.motion-reveal.is-visible {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .editorial-home .editorial-hero::before,
+  .editorial-home .editorial-hero::after,
+  .editorial-home .hero-flow-wash {
+    display: none;
+  }
+
+  .mobile-pour-photo,
+  .mobile-pour-stream {
+    position: absolute;
+    inset: 0;
+    display: block;
+    z-index: -2;
+    background-image: var(--mobile-pour-bg);
+    background-position: center top;
+    background-repeat: no-repeat;
+    background-size: cover;
+    pointer-events: none;
+    will-change: transform, opacity;
+  }
+
+  .mobile-pour-stream {
+    z-index: -1;
+    opacity: 0.42;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, transparent 56%, rgba(0, 0, 0, 0.3) 68%, #000 82%);
+    mask-image: linear-gradient(90deg, transparent 0%, transparent 56%, rgba(0, 0, 0, 0.3) 68%, #000 82%);
+    mix-blend-mode: multiply;
+  }
+
+  .editorial-home .editorial-copy {
+    position: relative;
+    z-index: 3;
+    display: block;
+    width: 100%;
+    max-width: 342px;
+  }
+
+  .editorial-home .editorial-copy .eyebrow {
+    display: block;
+    width: fit-content;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    color: #5a2339;
+    background: transparent;
+    box-shadow: none;
+    font-family: var(--opc-font-body);
+    font-size: 12px;
+    font-weight: 760;
+    line-height: 1.4;
+    letter-spacing: 0.07em;
+    animation: none;
+  }
+
+  .editorial-home .editorial-copy h1 {
+    max-width: 320px;
+    margin-top: 30px;
+    color: #4a1228;
+    font-family: var(--opc-font-title);
+    font-size: clamp(42px, 11.5vw, 46px);
+    font-weight: 400;
+    line-height: 1.13;
+    letter-spacing: 0;
+    animation: none;
+  }
+
+  .editorial-home .editorial-copy h1 .mobile-hero-title,
+  .editorial-home .editorial-copy h1 .mobile-hero-title > span {
+    display: block;
+    color: inherit;
+    background: none;
+    -webkit-text-fill-color: currentColor;
+  }
+
+  .editorial-home .editorial-copy h1 .mobile-hero-title > span + span {
+    margin-top: 4px;
+  }
+
+  .editorial-home .editorial-copy p {
+    max-width: 238px;
+    margin-top: 26px;
+    color: #3c3035;
+    font-size: 16px;
+    font-weight: 450;
+    line-height: 1.72;
+    animation: none;
+  }
+
+  .editorial-home .mobile-hero-copy {
+    display: inline;
+  }
+
+  .editorial-home .hero-meta-line,
+  .editorial-home .mobile-outcome-card {
+    display: none !important;
+  }
+
+  .editorial-home .hero-actions {
+    position: relative;
+    z-index: 4;
+    display: grid;
+    gap: 8px;
+    width: 100%;
+    margin-top: 34px;
+    animation: none;
+  }
+
+  .editorial-home .hero-actions .primary-btn {
+    width: 100%;
+    min-height: 58px;
+    justify-content: center;
+    border: 1px solid rgba(255, 245, 230, 0.16);
+    border-radius: 4px;
+    color: #fff7ea;
+    background: #4a1228;
+    box-shadow: 0 18px 44px rgba(74, 18, 40, 0.2);
+    font-family: var(--opc-font-title);
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+
+  .editorial-home .hero-actions .primary-btn svg {
+    position: absolute;
+    right: 26px;
+  }
+
+  .editorial-home .hero-actions .ghost-btn {
+    width: fit-content;
+    min-height: 44px;
+    justify-content: flex-start;
+    padding: 0 3px;
+    border: 0;
+    border-radius: 0;
+    color: #3b1f2b;
+    background: transparent;
+    box-shadow: none;
+    font-family: var(--opc-font-title);
+    font-size: 15px;
+    font-weight: 400;
+    text-decoration: underline;
+    text-decoration-color: rgba(74, 18, 40, 0.45);
+    text-underline-offset: 6px;
+    justify-self: center;
+  }
+
+  .editorial-home .hero-actions .ghost-btn::before {
+    display: none;
+  }
+
+  .mobile-dossier-peek {
+    position: absolute;
+    right: -78px;
+    bottom: -60px;
+    z-index: 1;
+    display: block;
+    width: 480px;
+    opacity: 0.96;
+    transform: rotate(-2deg);
+    transform-origin: 50% 100%;
+    pointer-events: none;
+    will-change: transform, opacity;
+  }
+
+  .mobile-dossier-peek img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 0;
+    clip-path: polygon(0 42%, 92% 4%, 100% 4%, 100% 100%, 0 100%);
+    box-shadow: 0 24px 54px rgba(74, 18, 40, 0.1);
+  }
+
+  .editorial-home .chapter-strip,
+  .editorial-home .taxonomy-section {
+    margin-top: 0;
+  }
+}
+
+@keyframes mobileMenuIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -10px, 0) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-menu-panel {
+    animation: none;
+  }
+
+  .mobile-pour-photo,
+  .mobile-pour-stream,
+  .mobile-dossier-peek {
+    will-change: auto;
+  }
+}
+
 /* Performance-safe polish: transform/opacity only, with reduced-motion support. */
 .primary-btn,
 .ghost-btn,

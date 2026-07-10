@@ -11,13 +11,18 @@ import {
   FunnelSimple,
   MagicWand,
   MagnifyingGlass,
+  List,
   ShieldCheck,
   SignOut,
   Target,
   Trash,
   UsersThree,
+  X,
 } from "@phosphor-icons/react";
+import { gsap } from "gsap";
 import fruitWineWave from "./assets/fruit-wine-wave.webp";
+import mobileDossierPeek from "./assets/mobile-dossier-peek.webp";
+import mobileRosePour from "./assets/mobile-rose-pour.webp";
 
 const dimensions = [
   "内容能力",
@@ -544,6 +549,7 @@ function buildBespokeRoute(business, ai) {
 }
 
 function AppHeader({ view, onNavigate, adminLoggedIn }) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const nav = [
     ["home", "首页"],
     ["business", "商业测评"],
@@ -551,32 +557,80 @@ function AppHeader({ view, onNavigate, adminLoggedIn }) {
     ["card", "OPC定位卡"],
   ];
 
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [view]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [mobileMenuOpen]);
+
+  function navigateTo(nextView) {
+    setMobileMenuOpen(false);
+    onNavigate(nextView);
+  }
+
   return (
-    <header className="site-header">
-      <button className="brand" type="button" onClick={() => onNavigate("home")} aria-label="返回首页">
+    <header className={`site-header site-header-${view} ${mobileMenuOpen ? "mobile-open" : ""}`}>
+      <button className="brand" type="button" onClick={() => navigateTo("home")} aria-label="返回首页">
         <span className="brand-wordmark">
           <strong>她智汇</strong>
           <small>Human Leverage Atelier</small>
         </span>
       </button>
-      <nav aria-label="主导航">
+      <button
+        className="mobile-menu-toggle"
+        type="button"
+        aria-label={mobileMenuOpen ? "关闭导航" : "打开导航"}
+        aria-expanded={mobileMenuOpen}
+        aria-controls="mobile-navigation"
+        onClick={() => setMobileMenuOpen((open) => !open)}
+      >
+        {mobileMenuOpen ? <X size={24} weight="light" /> : <List size={26} weight="light" />}
+      </button>
+      <nav className="desktop-nav" aria-label="主导航">
         {nav.map(([key, label]) => (
           <button
             className={view === key ? "active" : ""}
             key={key}
             type="button"
             aria-current={view === key ? "page" : undefined}
-            onClick={() => onNavigate(key)}
+            onClick={() => navigateTo(key)}
           >
             {label}
           </button>
         ))}
       </nav>
+      {mobileMenuOpen && (
+        <div className="mobile-menu-panel" id="mobile-navigation">
+          <nav aria-label="移动导航">
+            {nav.map(([key, label]) => (
+              <button
+                className={view === key ? "active" : ""}
+                key={key}
+                type="button"
+                aria-current={view === key ? "page" : undefined}
+                onClick={() => navigateTo(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+          <button className="mobile-admin-link" type="button" onClick={() => navigateTo(adminLoggedIn ? "admin" : "admin-login")}>
+            {adminLoggedIn ? "进入管理后台" : "管理员登录"}
+          </button>
+        </div>
+      )}
       <button
         className="auth-pill"
         type="button"
         aria-current={view === "admin" || view === "admin-login" ? "page" : undefined}
-        onClick={() => onNavigate(adminLoggedIn ? "admin" : "admin-login")}
+        onClick={() => navigateTo(adminLoggedIn ? "admin" : "admin-login")}
       >
         {adminLoggedIn ? "管理后台" : "管理员登录"}
       </button>
@@ -609,10 +663,66 @@ function FlowStepper({ current, completed = [] }) {
 }
 
 function HomePage({ setView, onStart, businessResult }) {
+  const heroRef = useRef(null);
   const preview = businessResult ?? calculateBusiness(fallbackAnswers(commercialQuestions));
+
+  useEffect(() => {
+    const media = gsap.matchMedia();
+
+    media.add(
+      {
+        isMobile: "(max-width: 760px)",
+        reduceMotion: "(prefers-reduced-motion: reduce)",
+      },
+      (context) => {
+        const { isMobile, reduceMotion } = context.conditions;
+        const hero = heroRef.current;
+        if (!isMobile || !hero) return undefined;
+
+        const photo = hero.querySelector(".mobile-pour-photo");
+        const stream = hero.querySelector(".mobile-pour-stream");
+        const eyebrow = hero.querySelector(".eyebrow");
+        const title = hero.querySelector("h1");
+        const body = hero.querySelector(".mobile-hero-copy");
+        const actions = hero.querySelector(".hero-actions");
+        const dossier = hero.querySelector(".mobile-dossier-peek");
+        const brand = document.querySelector(".site-header-home .brand");
+        const menu = document.querySelector(".site-header-home .mobile-menu-toggle");
+        const targets = [photo, stream, eyebrow, title, body, actions, dossier, brand, menu].filter(Boolean);
+
+        if (reduceMotion) {
+          gsap.set(targets, { clearProps: "all" });
+          return undefined;
+        }
+
+        const timeline = gsap.timeline({ defaults: { overwrite: "auto" } });
+        timeline
+          .from(photo, { opacity: 0, xPercent: 3, scale: 1.06, duration: 1.25, ease: "sine.out" }, 0.18)
+          .from(stream, { opacity: 0, scaleY: 0.06, duration: 1.45, ease: "power3.out", transformOrigin: "50% 0%" }, 0.12)
+          .from(brand, { opacity: 0, x: -16, duration: 0.52, ease: "expo.out" }, 0.34)
+          .from(menu, { opacity: 0, scale: 0.86, duration: 0.38, ease: "back.out(1.15)" }, 0.46)
+          .from(eyebrow, { opacity: 0, x: -18, duration: 0.46, ease: "circ.out" }, 0.68)
+          .from(title, { opacity: 0, y: 28, scale: 0.985, duration: 0.76, ease: "power4.out" }, 0.76)
+          .from(body, { opacity: 0, x: -14, duration: 0.56, ease: "power2.out" }, 0.94)
+          .from(actions, { opacity: 0, y: 22, duration: 0.66, ease: "back.out(1.08)" }, 1.1)
+          .from(dossier, { opacity: 0, y: 78, rotation: 1.2, duration: 0.92, ease: "power3.out" }, 1.12)
+          .to(photo, { yPercent: -0.8, scale: 1.012, duration: 2.2, ease: "sine.inOut" }, 1.38);
+
+        return () => timeline.kill();
+      },
+    );
+
+    return () => media.revert();
+  }, []);
+
   return (
-    <main className="page-shell home-shell editorial-home" style={{ "--home-wave-bg": `url(${fruitWineWave})` }}>
-      <section className="editorial-hero">
+    <main
+      className="page-shell home-shell editorial-home"
+      style={{ "--home-wave-bg": `url(${fruitWineWave})`, "--mobile-pour-bg": `url(${mobileRosePour})` }}
+    >
+      <section className="editorial-hero" ref={heroRef}>
+        <div className="mobile-pour-photo" aria-hidden="true" />
+        <div className="mobile-pour-stream" aria-hidden="true" />
         <div className="hero-flow-wash" aria-hidden="true" />
         <div className="editorial-copy">
           <span className="eyebrow">PRIVATE OPC INTAKE · 3分钟</span>
@@ -622,7 +732,7 @@ function HomePage({ setView, onStart, businessResult }) {
               <span className="hero-title-accent">定一张定位卡</span>
             </span>
             <span className="mobile-hero-title">
-              <span>为你的商业感</span>
+              <span>为你的商业感，</span>
               <span className="hero-title-accent">定一张定位卡</span>
             </span>
           </h1>
@@ -631,7 +741,7 @@ function HomePage({ setView, onStart, businessResult }) {
               像进入一间私人商业定位室，从商业能力、AI工具短板到18个女性赛道建议，生成一张清晰、可启动的个人OPC定位卡。
             </span>
             <span className="mobile-hero-copy">
-              3分钟看清你的女性赛道、AI工具短板与下一步启动路径。
+              看清女性赛道、AI工具短板与下一步启动路径。
             </span>
           </p>
           <div className="hero-meta-line" aria-label="测评包含内容">
@@ -651,6 +761,9 @@ function HomePage({ setView, onStart, businessResult }) {
         </div>
 
         <DossierPreview preview={preview} />
+        <div className="mobile-dossier-peek" aria-hidden="true">
+          <img src={mobileDossierPeek} alt="" />
+        </div>
       </section>
 
       <section className="chapter-strip" aria-label="三步测评路径">
