@@ -20,9 +20,10 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { gsap } from "gsap";
+import atelierPaperTransition from "./assets/atelier-paper-transition.jpg";
+import dustyBlushPaper from "./assets/dusty-blush-paper.jpg";
 import fruitWineWave from "./assets/fruit-wine-wave.webp";
-import mobileDossierPeek from "./assets/mobile-dossier-peek.webp";
-import mobileRosePour from "./assets/mobile-rose-pour.webp";
+import oxbloodVelvet from "./assets/oxblood-velvet.jpg";
 
 const dimensions = [
   "内容能力",
@@ -679,16 +680,14 @@ function HomePage({ setView, onStart, businessResult }) {
         const hero = heroRef.current;
         if (!isMobile || !hero) return undefined;
 
-        const photo = hero.querySelector(".mobile-pour-photo");
-        const stream = hero.querySelector(".mobile-pour-stream");
+        const photo = hero.querySelector(".mobile-velvet-photo");
         const eyebrow = hero.querySelector(".eyebrow");
         const title = hero.querySelector("h1");
         const body = hero.querySelector(".mobile-hero-copy");
         const actions = hero.querySelector(".hero-actions");
-        const dossier = hero.querySelector(".mobile-dossier-peek");
         const brand = document.querySelector(".site-header-home .brand");
         const menu = document.querySelector(".site-header-home .mobile-menu-toggle");
-        const targets = [photo, stream, eyebrow, title, body, actions, dossier, brand, menu].filter(Boolean);
+        const targets = [photo, eyebrow, title, body, actions, brand, menu].filter(Boolean);
 
         if (reduceMotion) {
           gsap.set(targets, { clearProps: "all" });
@@ -697,16 +696,14 @@ function HomePage({ setView, onStart, businessResult }) {
 
         const timeline = gsap.timeline({ defaults: { overwrite: "auto" } });
         timeline
-          .from(photo, { opacity: 0, xPercent: 3, scale: 1.06, duration: 1.25, ease: "sine.out" }, 0.18)
-          .from(stream, { opacity: 0, scaleY: 0.06, duration: 1.45, ease: "power3.out", transformOrigin: "50% 0%" }, 0.12)
+          .from(photo, { opacity: 0, scale: 1.045, duration: 1.2, ease: "sine.out" }, 0.16)
           .from(brand, { opacity: 0, x: -16, duration: 0.52, ease: "expo.out" }, 0.34)
           .from(menu, { opacity: 0, scale: 0.86, duration: 0.38, ease: "back.out(1.15)" }, 0.46)
           .from(eyebrow, { opacity: 0, x: -18, duration: 0.46, ease: "circ.out" }, 0.68)
           .from(title, { opacity: 0, y: 28, scale: 0.985, duration: 0.76, ease: "power4.out" }, 0.76)
           .from(body, { opacity: 0, x: -14, duration: 0.56, ease: "power2.out" }, 0.94)
           .from(actions, { opacity: 0, y: 22, duration: 0.66, ease: "back.out(1.08)" }, 1.1)
-          .from(dossier, { opacity: 0, y: 78, rotation: 1.2, duration: 0.92, ease: "power3.out" }, 1.12)
-          .to(photo, { yPercent: -0.8, scale: 1.012, duration: 2.2, ease: "sine.inOut" }, 1.38);
+          .to(photo, { yPercent: -0.6, scale: 1.01, duration: 2.1, ease: "sine.inOut" }, 1.34);
 
         return () => timeline.kill();
       },
@@ -718,11 +715,15 @@ function HomePage({ setView, onStart, businessResult }) {
   return (
     <main
       className="page-shell home-shell editorial-home"
-      style={{ "--home-wave-bg": `url(${fruitWineWave})`, "--mobile-pour-bg": `url(${mobileRosePour})` }}
+      style={{
+        "--home-wave-bg": `url(${fruitWineWave})`,
+        "--mobile-velvet-bg": `url(${oxbloodVelvet})`,
+        "--mobile-paper-bg": `url(${dustyBlushPaper})`,
+        "--mobile-transition-bg": `url(${atelierPaperTransition})`,
+      }}
     >
       <section className="editorial-hero" ref={heroRef}>
-        <div className="mobile-pour-photo" aria-hidden="true" />
-        <div className="mobile-pour-stream" aria-hidden="true" />
+        <div className="mobile-velvet-photo" aria-hidden="true" />
         <div className="hero-flow-wash" aria-hidden="true" />
         <div className="editorial-copy">
           <span className="eyebrow">PRIVATE OPC INTAKE · 3分钟</span>
@@ -761,10 +762,13 @@ function HomePage({ setView, onStart, businessResult }) {
         </div>
 
         <DossierPreview preview={preview} />
-        <div className="mobile-dossier-peek" aria-hidden="true">
-          <img src={mobileDossierPeek} alt="" />
-        </div>
       </section>
+
+      <MobileAtelierHome
+        preview={preview}
+        onStart={onStart}
+        onOpenCard={() => setView("card")}
+      />
 
       <section className="chapter-strip" aria-label="三步测评路径">
         <div className="chapter-title">
@@ -990,6 +994,113 @@ function DossierPreview({ preview }) {
         定位卡样例：{preview.level.level}，{preview.level.name}，推荐品类为{top.map((category) => category.short).join("、")}。
       </figcaption>
     </figure>
+  );
+}
+
+function MobileAtelierHome({ preview, onStart, onOpenCard }) {
+  const top = preview.recommendedCategories.slice(0, 3);
+
+  return (
+    <div className="mobile-atelier-home">
+      <div className="mobile-paper-transition" aria-hidden="true">
+        <span className="atelier-signature">她智汇</span>
+        <span className="atelier-byline">FOR HER · BY HER</span>
+      </div>
+
+      <section className="mobile-dossier-showcase" aria-labelledby="mobile-dossier-title">
+        <div className="mobile-dossier-layout">
+          <article className="mobile-physical-card">
+            <div className="mobile-card-brand">
+              <span>她智汇</span>
+              <small>Human Leverage Atelier</small>
+            </div>
+            <span className="mobile-card-ribbon">{preview.level.level}</span>
+            <p>PERSONAL OPC POSITIONING CARD</p>
+            <h2 id="mobile-dossier-title">个人OPC定位卡</h2>
+            <div className="mobile-card-score">
+              <div>
+                <small>她信分</small>
+                <strong>{creditScore(preview)}</strong>
+              </div>
+              <div>
+                <small>OPC等级</small>
+                <strong>{preview.level.level}</strong>
+                <span>{preview.level.name}</span>
+              </div>
+            </div>
+            <div className="mobile-card-top3">
+              <span>推荐赛道 TOP3</span>
+              {top.map((category, index) => (
+                <div key={category.name}>
+                  <em>{String(index + 1).padStart(2, "0")}</em>
+                  <strong>{category.short}</strong>
+                  <i aria-hidden="true"><b style={{ width: `${category.match}%` }} /></i>
+                  <small>{category.match}%</small>
+                </div>
+              ))}
+            </div>
+            <div className="mobile-card-footnote">
+              <span>优势维度<strong>{preview.strongestDim}</strong></span>
+              <span>下一步<strong>补齐AI流程</strong></span>
+            </div>
+          </article>
+
+          <div className="mobile-track-ledger">
+            <span>18 WOMEN'S TRACKS</span>
+            <h2>18个女性赛道<br />全景领域一览</h2>
+            <ol>
+              {categoryWeights.map((category, index) => (
+                <li key={category.name}>
+                  <em>{String(index + 1).padStart(2, "0")}</em>
+                  <span>{category.short}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+        <button className="atelier-text-link" type="button" onClick={onOpenCard}>
+          查看定位卡样例 <ArrowRight size={15} />
+        </button>
+      </section>
+
+      <section className="mobile-process-ledger" aria-labelledby="mobile-process-title">
+        <span className="mobile-section-kicker">PROCESS · 01/03</span>
+        <h2 id="mobile-process-title">从0到你的商业定位</h2>
+        <div className="mobile-process-rows">
+          <button type="button" onClick={onStart}>
+            <em>01</em>
+            <span><strong>商业能力测评</strong><small>看见你的优势、资源与商业方式</small></span>
+            <b>约3分钟</b>
+          </button>
+          <button type="button" onClick={onStart}>
+            <em>02</em>
+            <span><strong>AI工具测评</strong><small>找到内容、私域与交付的效率短板</small></span>
+            <b>约3分钟</b>
+          </button>
+          <button type="button" onClick={onOpenCard}>
+            <em>03</em>
+            <span><strong>OPC定位卡</strong><small>结合18个女性赛道生成启动建议</small></span>
+            <b>即时生成</b>
+          </button>
+        </div>
+      </section>
+
+      <section className="mobile-closing-band">
+        <span>PRIVATE COMMERCIAL DOSSIER</span>
+        <h2>你的第一张<br />商业定位档案</h2>
+        <p>输入姓名与手机号，开始免费测评。</p>
+        <button type="button" onClick={onStart}>
+          开始3分钟测评 <ArrowRight size={18} />
+        </button>
+        <small>仅用于生成与保存你的测评记录</small>
+        <strong className="atelier-signature">她智汇</strong>
+      </section>
+
+      <footer className="mobile-atelier-footer">
+        <span>她智汇 · Human Leverage Atelier</span>
+        <span>隐私说明 · 管理员登录</span>
+      </footer>
+    </div>
   );
 }
 
@@ -1272,6 +1383,138 @@ function DimensionBand({ scores }) {
   );
 }
 
+function MobilePositioningReport({
+  profileName,
+  business,
+  ai,
+  top,
+  dimensionReport,
+  bespokeRoute,
+  copied,
+  onCopy,
+  onDownload,
+  onRestart,
+  onAiAssessment,
+}) {
+  const weakestAreas = [...ai.areas]
+    .sort((left, right) => ai.percent[left] - ai.percent[right])
+    .slice(0, 3);
+
+  return (
+    <section className="mobile-positioning-report" aria-label="个人OPC定位卡详情">
+      <section className="mobile-result-hero">
+        <span>PRIVATE OPC DOSSIER · RESULT 01/03</span>
+        <h1>{profileName}</h1>
+        <p>你的个人OPC定位卡</p>
+        <small>{new Intl.DateTimeFormat("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date())}</small>
+      </section>
+
+      <div className="mobile-result-transition" aria-hidden="true">
+        <span className="atelier-signature">她智汇</span>
+        <span className="atelier-byline">PRIVATE COMMERCIAL DOSSIER</span>
+      </div>
+
+      <section className="mobile-result-dossier">
+        <div className="mobile-result-scoreboard">
+          <div>
+            <span>她信分</span>
+            <strong>{creditScore(business)}</strong>
+            <small>商业潜力综合分</small>
+          </div>
+          <div>
+            <span>OPC等级</span>
+            <strong>{business.level.level}</strong>
+            <small>{business.level.name}</small>
+          </div>
+        </div>
+
+        <div className="mobile-report-top3">
+          <div className="mobile-report-section-head">
+            <span>01</span>
+            <h2>推荐赛道 TOP3</h2>
+          </div>
+          {top.map((category, index) => (
+            <div className="mobile-report-match" key={category.name}>
+              <em>{String(index + 1).padStart(2, "0")}</em>
+              <strong>{category.name}</strong>
+              <i aria-hidden="true"><b style={{ width: `${category.match}%` }} /></i>
+              <span>{category.match}%</span>
+            </div>
+          ))}
+          <p>你更适合以{business.strongestDim}与长期信任，建立高溢价的小而美品牌。</p>
+        </div>
+
+        <div className="mobile-positioning-why">
+          <div><span>优势维度</span><strong>{business.strongestDim}</strong></div>
+          <div><span>商业方式</span><strong>信任驱动</strong></div>
+          <div><span>增长抓手</span><strong>社群口碑</strong></div>
+        </div>
+      </section>
+
+      <section className="mobile-report-band mobile-dimension-ledger">
+        <div className="mobile-report-section-head">
+          <span>02</span>
+          <h2>商业能力六维图谱</h2>
+        </div>
+        {dimensionReport.map((item) => (
+          <div className="mobile-dimension-row" key={item.dimension}>
+            <strong>{item.dimension}</strong>
+            <i aria-hidden="true"><b style={{ width: `${item.score}%` }} /></i>
+            <span>{item.score}</span>
+          </div>
+        ))}
+        <p>你的优势集中在{business.strongestDim}；{business.weakestDim}是下一阶段重点。</p>
+      </section>
+
+      <section className="mobile-report-band mobile-ai-ledger">
+        <div className="mobile-report-section-head">
+          <span>03</span>
+          <h2>AI工具短板</h2>
+        </div>
+        {weakestAreas.map((area, index) => (
+          <div className="mobile-ai-row" key={area}>
+            <em>{String(index + 1).padStart(2, "0")}</em>
+            <strong>{area}</strong>
+            <span>{ai.percent[area]}</span>
+            <small>{index === 0 ? "优先补齐" : index === 1 ? "建立标准动作" : "可快速提升"}</small>
+          </div>
+        ))}
+      </section>
+
+      <section className="mobile-report-band mobile-route-ledger">
+        <div className="mobile-report-section-head">
+          <span>04</span>
+          <h2>你的30天启动路径</h2>
+        </div>
+        {bespokeRoute.map((item, index) => (
+          <article key={item.title}>
+            <em>{String(index + 1).padStart(2, "0")}</em>
+            <div><span>{item.period}</span><strong>{item.title}</strong><p>{item.text}</p></div>
+          </article>
+        ))}
+      </section>
+
+      <section className="mobile-report-actions">
+        <span>TURN POSITIONING INTO ACTION</span>
+        <h2>把定位变成第一步</h2>
+        <button type="button" onClick={onAiAssessment}>
+          继续AI工具测评 <ArrowRight size={18} />
+        </button>
+        <button className="mobile-report-link" type="button" onClick={onDownload}>
+          生成分享图
+        </button>
+        <button className="mobile-report-link" type="button" onClick={onCopy}>
+          {copied ? "分享文案已复制" : "复制分享文案"}
+        </button>
+        <button className="mobile-report-link" type="button" onClick={onRestart}>
+          重新测评
+        </button>
+        <strong className="atelier-signature">她智汇</strong>
+      </section>
+    </section>
+  );
+}
+
 function PositioningCard({ businessResult, aiResult, setView, sessionRecordId, leadInfo, businessAnswers, aiAnswers }) {
   const business = businessResult ?? calculateBusiness(fallbackAnswers(commercialQuestions));
   const ai = aiResult ?? calculateAi(fallbackAnswers(aiQuestions));
@@ -1346,8 +1589,28 @@ function PositioningCard({ businessResult, aiResult, setView, sessionRecordId, l
   }
 
   return (
-    <main className="page-shell card-shell">
+    <main
+      className="page-shell card-shell"
+      style={{
+        "--mobile-velvet-bg": `url(${oxbloodVelvet})`,
+        "--mobile-paper-bg": `url(${dustyBlushPaper})`,
+        "--mobile-transition-bg": `url(${atelierPaperTransition})`,
+      }}
+    >
       <FlowStepper current="card" completed={["business", "ai"]} />
+      <MobilePositioningReport
+        profileName={profileName}
+        business={business}
+        ai={ai}
+        top={top}
+        dimensionReport={dimensionReport}
+        bespokeRoute={bespokeRoute}
+        copied={copied}
+        onCopy={copyShareText}
+        onDownload={downloadShareImage}
+        onRestart={() => setView("business")}
+        onAiAssessment={() => setView("ai")}
+      />
       <section className="card-title-row">
         <div>
           <span className="document-kicker">PERSONAL OPC POSITIONING CARD</span>
@@ -2067,6 +2330,9 @@ export function App() {
       ".luxury-dossier",
       ".chapter-strip",
       ".taxonomy-section",
+      ".mobile-dossier-showcase",
+      ".mobile-process-ledger",
+      ".mobile-closing-band",
       ".lead-intake-card",
       ".flow-stepper",
       ".side-summary",
@@ -2079,6 +2345,9 @@ export function App() {
       ".bespoke-route-section",
       ".calculation-section",
       ".card-bottom-grid",
+      ".mobile-result-dossier",
+      ".mobile-report-band",
+      ".mobile-report-actions",
       ".admin-dashboard-head",
       ".admin-stat-card",
       ".admin-records-panel",
@@ -2102,8 +2371,8 @@ export function App() {
           observer.unobserve(entry.target);
         });
       }, {
-        rootMargin: "0px 0px -8% 0px",
-        threshold: 0.12,
+        rootMargin: "0px 0px -3% 0px",
+        threshold: 0.07,
       });
       nodes.forEach((node) => observer.observe(node));
     });

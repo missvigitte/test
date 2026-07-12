@@ -1,32 +1,42 @@
-# Private Atelier Pour
+# Private Atelier Dossier
 
 ## Style Prompt
 
-Luxury bridal editorial meets a private commercial consulting atelier. The mobile homepage uses luminous silk, crystal and rosé fruit wine as one cinematic background, then lets restrained Chinese typography and a single conversion action carry the experience. Motion follows a build, breathe and resolve rhythm: the pour arrives first, the content follows, then the frame becomes still.
+Luxury bridal editorial meets a private commercial consulting atelier. Mobile pages move from deep oxblood velvet into deckled ivory paper and dusty-blush cotton stock, then present assessment data as a printed private dossier. Thin Chinese Songti typography, fine rules and one handwritten sign-off carry the identity.
 
 ## Colors
 
-- `#FBF6EE` - warm ivory canvas
-- `#4A1228` - primary oxblood text and action
-- `#2F2026` - body text
-- `#A47A3B` - antique gold detail
-- `#C9857B` - restrained rosé accent
+- `#F8F0E5` - warm ivory canvas
+- `#2B020D` - oxblood velvet
+- `#541128` - result numerals and primary ink accent
+- `#E7CBC6` - dusty-blush dossier paper
+- `#6C5960` - mushroom-taupe AI band
+- `#B4935D` - antique-gold detail
+- `#2D161F` - paper-surface text
 
 ## Typography
 
-- Display: `Noto Serif SC`, `Songti SC`, serif, weight 400
-- Interface: `Avenir Next`, `PingFang SC`, sans-serif, weight 400-700
+- Display: `Songti SC`, `STSong`, `Noto Serif CJK SC`, serif, weight 300-400
+- Interface: `Avenir Next`, `PingFang SC`, sans-serif, weight 400-600
+- Signature: `STXingkai`, `KaiTi`, cursive, used once per major page
+
+## Materials
+
+- Photorealistic oxblood velvet for opening and action bands
+- Warm ivory deckled paper with a restrained gold edge
+- Dusty-blush cotton paper for dossier and capability sections
+- Fine ledger rules rather than rounded cards
 
 ## Motion
 
-- First motion begins after 120-180ms.
-- Pour and silk use slow `sine` motion; interface entrances use varied `expo`, `circ`, `power4` and restrained `back` easing.
-- Animate transform and opacity only. The intro resolves after about 3.6 seconds and does not loop.
-- Honor `prefers-reduced-motion` with the complete static end state.
+- Hero imagery resolves first; label, title, body and CTA follow in a restrained GSAP sequence.
+- Below-fold sections use IntersectionObserver opacity and transform reveals only.
+- Motion stays between 220-760ms, with no looping decorative animation.
+- `prefers-reduced-motion` resolves directly to the static end state.
 
-## What NOT to Do
+## What Not To Do
 
-- No circular AI-style brand mark, floating chips, glass cards or purple-blue gradients.
-- No endless ambient loops, particles, elastic bounce or fast parallax.
-- No visible admin control in the closed consumer mobile header.
-- No desktop layout changes from this mobile art direction.
+- No liquid, pouring, glass, splash or literal sea waves.
+- No circular `她` logo, pill rows, glass cards or purple-blue AI gradients.
+- No nested cards, heavy shadows, glossy plastic or ornamental clutter.
+- Do not change the established desktop composition from this mobile art direction.
