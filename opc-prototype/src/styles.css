@@ -27,14 +27,6 @@
   text-rendering: geometricPrecision;
 }
 
-@font-face {
-  font-family: "TZH Flowing Signature";
-  src: url("./assets/liu-jian-mao-cao-tzh.woff2") format("woff2");
-  font-display: swap;
-  font-style: normal;
-  font-weight: 400;
-}
-
 * {
   box-sizing: border-box;
 }
@@ -12656,10 +12648,15 @@ body {
     gap: 5px;
   }
 
-  .mobile-paper-transition > .atelier-signature {
-    font-family: "TZH Flowing Signature", "STXingkai", "KaiTi", cursive;
-    font-size: 32px;
-    font-weight: 400;
-    letter-spacing: 0;
+  .mobile-paper-transition > .atelier-signature-image {
+    position: absolute;
+    top: 40px;
+    left: 45%;
+    z-index: 6;
+    display: block;
+    width: 104px;
+    height: auto;
+    transform: translateX(-50%) rotate(-4deg);
+    filter: drop-shadow(0 1px 10px rgba(30, 2, 11, 0.2));
   }
 }
