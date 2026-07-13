@@ -13209,35 +13209,17 @@ body {
   }
 
   .mobile-paper-transition::after {
+    display: none;
+  }
+
+  .mobile-paper-transition > .atelier-signature-art {
     position: absolute;
-    top: 42px;
-    right: -7%;
-    z-index: 4;
-    width: 67%;
-    height: 42px;
-    border-top: 1.5px solid #d4ba7d;
-    border-radius: 50%;
-    content: "";
-    transform: rotate(-6deg);
-  }
-
-  .mobile-paper-transition > .atelier-signature {
-    top: 28px;
-    left: 41%;
+    top: 0;
+    left: 0;
     z-index: 7;
-    color: #d8bd84;
-    font-size: 38px;
-    text-shadow: none;
-    transform: translateX(-50%) rotate(-5deg);
-    white-space: nowrap;
-  }
-
-  .mobile-paper-transition > .atelier-byline {
-    top: 58px;
-    right: 20px;
-    z-index: 7;
-    color: #bba273;
-    font-size: 7px;
+    display: block;
+    width: 100%;
+    height: auto;
   }
 }
 
