@@ -580,7 +580,7 @@ function AppHeader({ view, onNavigate, adminLoggedIn }) {
     <header className={`site-header site-header-${view} ${mobileMenuOpen ? "mobile-open" : ""}`}>
       <button className="brand" type="button" onClick={() => navigateTo("home")} aria-label="返回首页">
         <span className="brand-wordmark">
-          <strong>她智汇</strong>
+          <strong className="brand-script">她智汇</strong>
           <small>Human Leverage Atelier</small>
         </span>
       </button>
@@ -928,7 +928,7 @@ function DossierPreview({ preview }) {
 
         <article className="premium-dossier-card">
           <div className="premium-card-top">
-            <span className="mini-wordmark">她智汇</span>
+            <span className="mini-wordmark brand-script">她智汇</span>
             <div>
               <strong>Human Leverage Atelier</strong>
               <small>PRIVATE COMMERCIAL DOSSIER</small>
@@ -1011,7 +1011,7 @@ function MobileAtelierHome({ preview, onStart, onOpenCard }) {
         <div className="mobile-dossier-layout">
           <article className="mobile-physical-card">
             <div className="mobile-card-brand">
-              <span>她智汇</span>
+              <span className="brand-script">她智汇</span>
               <small>Human Leverage Atelier</small>
             </div>
             <span className="mobile-card-ribbon">{preview.level.level}</span>
@@ -1097,7 +1097,7 @@ function MobileAtelierHome({ preview, onStart, onOpenCard }) {
       </section>
 
       <footer className="mobile-atelier-footer">
-        <span>她智汇 · Human Leverage Atelier</span>
+        <span className="footer-brand-lockup"><b className="brand-script">她智汇</b> Human Leverage Atelier</span>
         <span>隐私说明 · 管理员登录</span>
       </footer>
     </div>
@@ -1580,8 +1580,8 @@ function PositioningCard({ businessResult, aiResult, setView, sessionRecordId, l
     ctx.fillText("下一步：申请OPC孵化营，4周从品类分析到首单交付", 56, 370);
     ctx.fillStyle = "#C9A96E";
     ctx.fillRect(56, 424, 788, 2);
-    ctx.font = "500 18px 'Microsoft YaHei', sans-serif";
-    ctx.fillText("她智汇 Human Leverage Platform", 56, 462);
+    ctx.font = "italic 500 28px 'STXingkai', 'KaiTi', cursive";
+    ctx.fillText("她智汇", 56, 470);
     const link = document.createElement("a");
     link.download = "我的OPC定位卡.png";
     link.href = canvas.toDataURL("image/png");

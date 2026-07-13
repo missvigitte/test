@@ -27,6 +27,14 @@
   text-rendering: geometricPrecision;
 }
 
+@font-face {
+  font-family: "TZH Signature";
+  src: url("./assets/ma-shan-zheng-tzh.woff2") format("woff2");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -12598,5 +12606,59 @@ body {
 
   .mobile-result-transition .atelier-signature {
     top: 24px;
+  }
+}
+
+/* Handwritten brand lockup: a soft signature across header and dossier surfaces. */
+.brand-script,
+.brand-wordmark .brand-script,
+.site-header .brand .brand-script {
+  display: inline-block;
+  margin: 0;
+  color: #2b111b;
+  font-family: "STXingkai", "FZKai-Z03", "KaiTi", "Kaiti SC", cursive;
+  font-size: clamp(34px, 2.4vw, 42px);
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: 0;
+  transform: rotate(-2deg);
+  transform-origin: left center;
+}
+
+.premium-card-top .brand-script {
+  color: #3d1824;
+  font-size: 25px;
+}
+
+.mobile-card-brand .brand-script {
+  color: #3d1824;
+  font-size: 22px;
+}
+
+.footer-brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.footer-brand-lockup .brand-script {
+  color: inherit;
+  font-size: 19px;
+}
+
+@media (max-width: 760px) {
+  .site-header .brand .brand-script,
+  .brand-wordmark .brand-script {
+    font-size: 34px;
+  }
+
+  .brand-wordmark {
+    gap: 5px;
+  }
+
+  .mobile-paper-transition > .atelier-signature {
+    font-family: "TZH Signature", "STXingkai", "KaiTi", cursive;
+    font-size: 30px;
+    font-weight: 400;
   }
 }
