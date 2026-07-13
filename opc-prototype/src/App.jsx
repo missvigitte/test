@@ -24,7 +24,7 @@ import atelierPaperTransition from "./assets/atelier-paper-transition.jpg";
 import dustyBlushPaper from "./assets/dusty-blush-paper.jpg";
 import fruitWineWave from "./assets/fruit-wine-wave.webp";
 import oxbloodVelvet from "./assets/oxblood-velvet.jpg";
-import tzhSignatureReference from "./assets/tzh-signature-reference.png";
+import tzhTransitionReference from "./assets/tzh-transition-reference.webp";
 
 const dimensions = [
   "内容能力",
@@ -1004,8 +1004,7 @@ function MobileAtelierHome({ preview, onStart, onOpenCard }) {
   return (
     <div className="mobile-atelier-home">
       <div className="mobile-paper-transition" aria-hidden="true">
-        <img className="atelier-signature-image" src={tzhSignatureReference} alt="" />
-        <span className="atelier-byline">FOR HER · BY HER</span>
+        <img className="atelier-transition-reference" src={tzhTransitionReference} alt="" />
       </div>
 
       <section className="mobile-dossier-showcase" aria-labelledby="mobile-dossier-title">

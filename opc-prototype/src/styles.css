@@ -12639,6 +12639,13 @@ body {
 }
 
 @media (max-width: 760px) {
+  .mobile-paper-transition {
+    height: 96px;
+    margin-top: -72px;
+    background-color: transparent;
+    background-image: none;
+  }
+
   .site-header .brand .brand-script,
   .brand-wordmark .brand-script {
     font-size: 34px;
@@ -12648,15 +12655,14 @@ body {
     gap: 5px;
   }
 
-  .mobile-paper-transition > .atelier-signature-image {
+  .mobile-paper-transition > .atelier-transition-reference {
     position: absolute;
-    top: 40px;
-    left: 45%;
+    top: 0;
+    left: 0;
     z-index: 6;
     display: block;
-    width: 104px;
+    width: 100%;
     height: auto;
-    transform: translateX(-50%) rotate(-4deg);
-    filter: drop-shadow(0 1px 10px rgba(30, 2, 11, 0.2));
+    object-fit: contain;
   }
 }
