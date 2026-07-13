@@ -1400,6 +1400,12 @@ function MobilePositioningReport({
     .sort((left, right) => ai.percent[left] - ai.percent[right])
     .slice(0, 3);
 
+  const dimensionState = (item) => {
+    if (item.dimension === business.strongestDim) return "核心优势";
+    if (item.dimension === business.weakestDim) return "优先补齐";
+    return item.score >= 80 ? "优势能力" : item.score >= 72 ? "稳定能力" : "待提升";
+  };
+
   return (
     <section className="mobile-positioning-report" aria-label="个人OPC定位卡详情">
       <section className="mobile-result-hero">
@@ -1416,16 +1422,22 @@ function MobilePositioningReport({
 
       <section className="mobile-result-dossier">
         <div className="mobile-result-scoreboard">
-          <div>
+          <div className="is-score">
             <span>她信分</span>
             <strong>{creditScore(business)}</strong>
             <small>商业潜力综合分</small>
           </div>
-          <div>
+          <div className="is-level">
             <span>OPC等级</span>
             <strong>{business.level.level}</strong>
             <small>{business.level.name}</small>
           </div>
+        </div>
+
+        <div className="mobile-result-verdict">
+          <span>你的核心定位</span>
+          <strong>{top[0].name} × {business.strongestDim}</strong>
+          <p>先用最擅长的能力进入高匹配赛道，再用AI流程放大稳定产出。</p>
         </div>
 
         <div className="mobile-report-top3">
@@ -1434,11 +1446,20 @@ function MobilePositioningReport({
             <h2>推荐赛道 TOP3</h2>
           </div>
           {top.map((category, index) => (
-            <div className="mobile-report-match" key={category.name}>
+            <div className={`mobile-report-match ${index === 0 ? "is-lead" : ""}`} key={category.name}>
               <em>{String(index + 1).padStart(2, "0")}</em>
-              <strong>{category.name}</strong>
-              <i aria-hidden="true"><b style={{ width: `${category.match}%` }} /></i>
-              <span>{category.match}%</span>
+              <div>
+                <small>{index === 0 ? "首选赛道" : "潜力赛道"}</small>
+                <strong>{category.name}</strong>
+              </div>
+              <i
+                role="progressbar"
+                aria-label={`${category.name}匹配度`}
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow={category.match}
+              ><b style={{ width: `${category.match}%` }} /></i>
+              <span><b>{category.match}</b>%</span>
             </div>
           ))}
           <p>你更适合以{business.strongestDim}与长期信任，建立高溢价的小而美品牌。</p>
@@ -1456,10 +1477,23 @@ function MobilePositioningReport({
           <span>02</span>
           <h2>商业能力六维图谱</h2>
         </div>
+        <div className="mobile-dimension-summary">
+          <div><span>最强能力</span><strong>{business.strongestDim}</strong></div>
+          <div><span>增长突破口</span><strong>{business.weakestDim}</strong></div>
+        </div>
         {dimensionReport.map((item) => (
-          <div className="mobile-dimension-row" key={item.dimension}>
-            <strong>{item.dimension}</strong>
-            <i aria-hidden="true"><b style={{ width: `${item.score}%` }} /></i>
+          <div
+            className={`mobile-dimension-row ${item.dimension === business.strongestDim ? "is-strongest" : ""} ${item.dimension === business.weakestDim ? "is-weakest" : ""}`}
+            key={item.dimension}
+          >
+            <div><strong>{item.dimension}</strong><small>{dimensionState(item)}</small></div>
+            <i
+              role="progressbar"
+              aria-label={`${item.dimension}得分`}
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow={item.score}
+            ><b style={{ width: `${item.score}%` }} /></i>
             <span>{item.score}</span>
           </div>
         ))}
@@ -1472,11 +1506,20 @@ function MobilePositioningReport({
           <h2>AI工具短板</h2>
         </div>
         {weakestAreas.map((area, index) => (
-          <div className="mobile-ai-row" key={area}>
+          <div className={`mobile-ai-row ${index === 0 ? "is-priority" : ""}`} key={area}>
             <em>{String(index + 1).padStart(2, "0")}</em>
-            <strong>{area}</strong>
-            <span>{ai.percent[area]}</span>
-            <small>{index === 0 ? "优先补齐" : index === 1 ? "建立标准动作" : "可快速提升"}</small>
+            <div>
+              <small>{index === 0 ? "优先补齐" : index === 1 ? "建立标准动作" : "可快速提升"}</small>
+              <strong>{area}</strong>
+              <i
+                role="progressbar"
+                aria-label={`${area}工具成熟度`}
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow={ai.percent[area]}
+              ><b style={{ width: `${ai.percent[area]}%` }} /></i>
+            </div>
+            <span>{ai.percent[area]}<small>/100</small></span>
           </div>
         ))}
       </section>
@@ -1486,12 +1529,14 @@ function MobilePositioningReport({
           <span>04</span>
           <h2>你的30天启动路径</h2>
         </div>
+        <div className="mobile-route-timeline">
         {bespokeRoute.map((item, index) => (
-          <article key={item.title}>
+          <article className={index === 0 ? "is-current" : ""} key={item.title}>
             <em>{String(index + 1).padStart(2, "0")}</em>
             <div><span>{item.period}</span><strong>{item.title}</strong><p>{item.text}</p></div>
           </article>
         ))}
+        </div>
       </section>
 
       <section className="mobile-report-actions">
