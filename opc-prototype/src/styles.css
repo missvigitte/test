@@ -28,8 +28,8 @@
 }
 
 @font-face {
-  font-family: "TZH Signature";
-  src: url("./assets/ma-shan-zheng-tzh.woff2") format("woff2");
+  font-family: "TZH Flowing Signature";
+  src: url("./assets/liu-jian-mao-cao-tzh.woff2") format("woff2");
   font-display: swap;
   font-style: normal;
   font-weight: 400;
@@ -12657,8 +12657,9 @@ body {
   }
 
   .mobile-paper-transition > .atelier-signature {
-    font-family: "TZH Signature", "STXingkai", "KaiTi", cursive;
-    font-size: 30px;
+    font-family: "TZH Flowing Signature", "STXingkai", "KaiTi", cursive;
+    font-size: 32px;
     font-weight: 400;
+    letter-spacing: 0;
   }
 }
