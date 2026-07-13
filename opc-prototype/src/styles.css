@@ -3934,6 +3934,43 @@ body {
     background-size: 540px auto;
   }
 
+  .mobile-dimension-radar {
+    position: relative;
+    margin: 0 0 18px;
+    padding: 17px 12px 8px;
+    border: 1px solid rgba(130, 85, 71, 0.2);
+    background: rgba(255, 250, 246, 0.68);
+    box-shadow: 0 14px 32px rgba(70, 24, 40, 0.055);
+  }
+
+  .mobile-dimension-radar > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 0 5px;
+  }
+
+  .mobile-dimension-radar > div span {
+    color: #846c73;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+  }
+
+  .mobile-dimension-radar > div strong {
+    color: #7e1736;
+    font-family: "Songti SC", serif;
+    font-size: 13px;
+    font-weight: 400;
+  }
+
+  .mobile-dimension-radar .radar-canvas {
+    width: 100% !important;
+    max-width: 300px;
+    height: auto !important;
+    aspect-ratio: 1;
+    margin: 2px auto 0;
+  }
+
   .mobile-dimension-summary {
     display: grid;
     grid-template-columns: 1fr 1fr;

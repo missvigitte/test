@@ -1477,6 +1477,17 @@ function MobilePositioningReport({
           <span>02</span>
           <h2>商业能力六维图谱</h2>
         </div>
+        <figure className="mobile-dimension-radar">
+          <div>
+            <span>能力结构</span>
+            <strong>{business.strongestDim}领先</strong>
+          </div>
+          <RadarChart scores={business.percentScores} mobile />
+          <figcaption className="sr-only">
+            六维能力分数：
+            {dimensions.map((dimension) => `${dimension}${business.percentScores[dimension]}分`).join("，")}。
+          </figcaption>
+        </figure>
         <div className="mobile-dimension-summary">
           <div><span>最强能力</span><strong>{business.strongestDim}</strong></div>
           <div><span>增长突破口</span><strong>{business.weakestDim}</strong></div>
@@ -2271,7 +2282,7 @@ function creditScore(business) {
   return Math.min(960, Math.max(520, Math.round(520 + business.totalScore * 4)));
 }
 
-function RadarChart({ scores, compact = false }) {
+function RadarChart({ scores, compact = false, mobile = false }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -2287,9 +2298,17 @@ function RadarChart({ scores, compact = false }) {
     ctx.scale(ratio, ratio);
     ctx.clearRect(0, 0, size, size);
     const center = size / 2;
-    const radius = compact ? 62 : 105;
+    const radius = compact ? 62 : mobile ? 90 : 105;
     const values = dimensions.map((dim) => scores[dim] ?? 0);
     const angleStep = (Math.PI * 2) / dimensions.length;
+    const mobileLabels = {
+      "内容能力": "内容",
+      "销售敏感度": "销售",
+      "AI工具熟练度": "AI工具",
+      "学习能力": "学习",
+      "社交影响力": "影响力",
+      "商业判断力": "商业判断",
+    };
 
     ctx.strokeStyle = "rgba(122, 59, 82, 0.15)";
     ctx.lineWidth = 1;
@@ -2328,16 +2347,16 @@ function RadarChart({ scores, compact = false }) {
       ctx.font = "12px 'Microsoft YaHei', sans-serif";
       dimensions.forEach((dim, index) => {
         const angle = -Math.PI / 2 + index * angleStep;
-        const labelRadius = radius + 28;
+        const labelRadius = radius + (mobile ? 24 : 28);
         const x = center + Math.cos(angle) * labelRadius;
         const y = center + Math.sin(angle) * labelRadius;
         ctx.textAlign = x < center - 8 ? "right" : x > center + 8 ? "left" : "center";
-        ctx.fillText(dim, x, y);
+        ctx.fillText(mobile ? mobileLabels[dim] : dim, x, y);
       });
     }
-  }, [scores, compact]);
+  }, [scores, compact, mobile]);
 
-  return <canvas className="radar-canvas" ref={canvasRef} aria-label="六维能力雷达图" />;
+  return <canvas className="radar-canvas" ref={canvasRef} role="img" aria-label="六维能力雷达图" />;
 }
 
 export function App() {
