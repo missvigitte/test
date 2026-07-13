@@ -24,7 +24,6 @@ import atelierPaperTransition from "./assets/atelier-paper-transition.jpg";
 import dustyBlushPaper from "./assets/dusty-blush-paper.jpg";
 import fruitWineWave from "./assets/fruit-wine-wave.webp";
 import oxbloodVelvet from "./assets/oxblood-velvet.jpg";
-import tzhTransitionReference from "./assets/tzh-transition-reference.webp";
 
 const dimensions = [
   "内容能力",
@@ -315,7 +314,13 @@ async function requestJson(path, options = {}) {
 }
 
 async function saveAssessmentRecord({ record, business, ai, businessAnswers, aiAnswers }) {
-  upsertAdminRecord(record);
+  upsertAdminRecord({
+    ...record,
+    businessResult: business,
+    aiResult: ai,
+    businessAnswers,
+    aiAnswers,
+  });
   const payload = await requestJson("/api/records", {
     method: "POST",
     body: JSON.stringify({
@@ -1004,7 +1009,8 @@ function MobileAtelierHome({ preview, onStart, onOpenCard }) {
   return (
     <div className="mobile-atelier-home">
       <div className="mobile-paper-transition" aria-hidden="true">
-        <img className="atelier-transition-reference" src={tzhTransitionReference} alt="" />
+        <span className="atelier-signature">她智汇</span>
+        <span className="atelier-byline">FOR HER · BY HER</span>
       </div>
 
       <section className="mobile-dossier-showcase" aria-labelledby="mobile-dossier-title">
@@ -2032,6 +2038,14 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
   }, [query, records, statusFilter]);
 
   const selectedRecord = records.find((record) => record.id === selectedId) ?? filteredRecords[0] ?? records[0];
+  const selectedBusiness = selectedRecord?.businessResult ?? null;
+  const selectedAi = selectedRecord?.aiResult ?? null;
+  const selectedDimensions = selectedBusiness ? buildDimensionReport(selectedBusiness) : [];
+  const selectedCategories = selectedBusiness?.recommendedCategories ?? [];
+  const selectedAiAreas = selectedAi?.areas
+    ? [...selectedAi.areas].sort((left, right) => selectedAi.percent[left] - selectedAi.percent[right])
+    : [];
+  const selectedRoute = selectedBusiness && selectedAi ? buildBespokeRoute(selectedBusiness, selectedAi) : [];
   const pendingCount = records.filter((record) => ["待跟进", "待分配"].includes(record.status)).length;
   const highIntentCount = records.filter((record) => record.credit >= 800 || ["L7", "L8", "L9"].includes(record.level)).length;
   const convertedCount = records.filter((record) => record.status === "已转化").length;
@@ -2224,6 +2238,107 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
               <div><span>来源</span><strong>{selectedRecord.source}</strong></div>
               <div><span>负责顾问</span><strong>{selectedRecord.owner}</strong></div>
             </div>
+
+            {selectedBusiness && selectedAi ? (
+              <div className="admin-full-results">
+                <section className="admin-result-section">
+                  <div className="admin-result-title">
+                    <span>01</span>
+                    <div><small>BUSINESS PROFILE</small><h3>商业能力详细结果</h3></div>
+                  </div>
+                  <div className="admin-capability-chart">
+                    <RadarChart scores={selectedBusiness.percentScores} mobile />
+                    <div className="admin-dimension-bars">
+                      {selectedDimensions.map((item) => (
+                        <div key={item.dimension}>
+                          <span><strong>{item.dimension}</strong><small>{item.tier.label}</small></span>
+                          <i aria-hidden="true"><b style={{ width: `${item.score}%` }} /></i>
+                          <em>{item.score}</em>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+
+                <section className="admin-result-section">
+                  <div className="admin-result-title">
+                    <span>02</span>
+                    <div><small>TRACK MATCHING</small><h3>推荐赛道 Top3</h3></div>
+                  </div>
+                  <div className="admin-category-results">
+                    {selectedCategories.map((category, index) => (
+                      <div key={category.name}>
+                        <em>{String(index + 1).padStart(2, "0")}</em>
+                        <strong>{category.name}</strong>
+                        <i aria-hidden="true"><b style={{ width: `${category.match}%` }} /></i>
+                        <span>{category.match}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="admin-result-section admin-ai-results">
+                  <div className="admin-result-title">
+                    <span>03</span>
+                    <div><small>AI CAPABILITY</small><h3>AI工具能力与短板</h3></div>
+                  </div>
+                  {selectedAiAreas.map((area, index) => (
+                    <div className={index === 0 ? "is-priority" : ""} key={area}>
+                      <span><strong>{area}</strong><small>{index === 0 ? "优先补齐" : "工具成熟度"}</small></span>
+                      <i aria-hidden="true"><b style={{ width: `${selectedAi.percent[area]}%` }} /></i>
+                      <em>{selectedAi.percent[area]}</em>
+                    </div>
+                  ))}
+                </section>
+
+                <section className="admin-result-section">
+                  <div className="admin-result-title">
+                    <span>04</span>
+                    <div><small>ACTION ROUTE</small><h3>30天启动路径</h3></div>
+                  </div>
+                  <div className="admin-route-results">
+                    {selectedRoute.map((item, index) => (
+                      <article key={item.title}>
+                        <em>{String(index + 1).padStart(2, "0")}</em>
+                        <div><span>{item.period}</span><strong>{item.title}</strong><p>{item.text}</p></div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="admin-answer-results">
+                  <div className="admin-result-title">
+                    <span>05</span>
+                    <div><small>ANSWER SHEET</small><h3>原始答题记录</h3></div>
+                  </div>
+                  <details>
+                    <summary>商业测评 · {selectedRecord.businessAnswers?.length ?? 0}题</summary>
+                    <div>
+                      {commercialQuestions.map((question, index) => (
+                        <article key={`${question.q}-${index}`}>
+                          <span>{String(index + 1).padStart(2, "0")} · {question.q}</span>
+                          <strong>{question.options[selectedRecord.businessAnswers?.[index]] ?? "未记录"}</strong>
+                        </article>
+                      ))}
+                    </div>
+                  </details>
+                  <details>
+                    <summary>AI工具测评 · {selectedRecord.aiAnswers?.length ?? 0}题</summary>
+                    <div>
+                      {aiQuestions.map((question, index) => (
+                        <article key={`${question.q}-${index}`}>
+                          <span>{String(index + 1).padStart(2, "0")} · {question.q}</span>
+                          <strong>{question.options[selectedRecord.aiAnswers?.[index]] ?? "未记录"}</strong>
+                        </article>
+                      ))}
+                    </div>
+                  </details>
+                </section>
+              </div>
+            ) : (
+              <p className="admin-detail-unavailable">这条历史演示记录只保存了结果摘要，新的真实测评记录会展示完整维度、AI能力与答题明细。</p>
+            )}
+
             <label className="admin-note-field">
               <span>跟进备注</span>
               <textarea
