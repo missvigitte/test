@@ -2114,15 +2114,21 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
   return (
     <main className="page-shell admin-shell admin-dashboard-shell" style={{ "--admin-wave-bg": `url(${fruitWineWave})` }}>
       <section className="admin-dashboard-head">
-        <div>
+        <div className="admin-head-copy">
           <span className="document-kicker">OPC ADMIN CONSOLE</span>
           <h1>用户测评管理</h1>
           <p>{loading ? "正在同步最新测评记录..." : "集中查看商业测评、AI工具短板、OPC等级、推荐品类和跟进状态。"}</p>
           {remoteError && <p className="admin-sync-note" role="status">{remoteError}</p>}
         </div>
-        <button className="ghost-btn" type="button" onClick={logout}>
-          <SignOut size={18} /> 退出
-        </button>
+        <div className="admin-head-actions">
+          <span className={`admin-live-state${remoteError ? " is-offline" : ""}`}>
+            <i aria-hidden="true" />
+            {loading ? "正在同步数据" : remoteError ? "当前显示本地缓存" : "数据档案已连接"}
+          </span>
+          <button className="ghost-btn" type="button" onClick={logout}>
+            <SignOut size={18} /> 退出
+          </button>
+        </div>
       </section>
 
       <section className="admin-stat-grid" aria-label="后台关键指标">
@@ -2134,6 +2140,13 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
 
       <section className="admin-workbench">
         <div className="admin-records-panel">
+          <div className="admin-panel-heading">
+            <div>
+              <span>USER ARCHIVE</span>
+              <h2>用户测评档案</h2>
+            </div>
+            <p>{filteredRecords.length} / {records.length} 条记录</p>
+          </div>
           <div className="admin-toolbar">
             <label className="admin-search">
               <MagnifyingGlass size={18} />
@@ -2170,7 +2183,12 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
                 {filteredRecords.map((record) => (
                   <tr className={record.id === selectedRecord?.id ? "selected" : ""} key={record.id}>
                     <td>
-                      <button className="admin-user-cell" type="button" onClick={() => setSelectedId(record.id)}>
+                      <button
+                        className="admin-user-cell"
+                        type="button"
+                        onClick={() => setSelectedId(record.id)}
+                        aria-pressed={record.id === selectedRecord?.id}
+                      >
                         <strong>{record.name}</strong>
                         <span>{record.phone}</span>
                       </button>
@@ -2216,6 +2234,10 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
 
         {selectedRecord && (
           <aside className="admin-detail-panel" aria-label="用户记录详情">
+            <div className="admin-detail-label">
+              <span>PRIVATE DOSSIER</span>
+              <small>完整测评档案</small>
+            </div>
             <div className="admin-detail-top">
               <span>{selectedRecord.id}</span>
               <strong>{selectedRecord.status}</strong>
