@@ -13180,8 +13180,7 @@ body {
   .mobile-paper-transition {
     height: 96px;
     margin-top: -72px;
-    background-color: #180209;
-    background-image: linear-gradient(135deg, #080003 0%, #21040d 56%, #130107 100%);
+    background: #180209;
   }
 
   .site-header .brand .brand-script,
@@ -13194,18 +13193,7 @@ body {
   }
 
   .mobile-paper-transition::before {
-    position: absolute;
-    right: -16%;
-    bottom: -54px;
-    left: -12%;
-    z-index: 3;
-    height: 91px;
-    border-top: 2px solid rgba(216, 193, 145, 0.82);
-    border-radius: 50% 48% 0 0 / 34% 32% 0 0;
-    background: #efe1d1;
-    box-shadow: 0 -5px 0 rgba(255, 249, 239, 0.9);
-    content: "";
-    transform: rotate(1.8deg);
+    display: none;
   }
 
   .mobile-paper-transition::after {
@@ -13219,7 +13207,9 @@ body {
     z-index: 7;
     display: block;
     width: 100%;
-    height: auto;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
   }
 }
 
