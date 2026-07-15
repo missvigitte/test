@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ArrowLeft,
   ArrowRight,
   ChartLineUp,
   Check,
@@ -12,10 +13,14 @@ import {
   MagicWand,
   MagnifyingGlass,
   List,
+  LockKey,
+  Phone,
+  ShareNetwork,
   ShieldCheck,
   SignOut,
   Target,
   Trash,
+  UserCircle,
   UsersThree,
   X,
 } from "@phosphor-icons/react";
@@ -116,7 +121,69 @@ const ADMIN_SESSION_KEY = "opc-admin-session";
 const ADMIN_RECORDS_KEY = "opc-admin-records";
 const ADMIN_ACCESS_KEY = "opc-admin-access-key";
 const LEAD_INFO_KEY = "opc-lead-info";
+const PENDING_ASSESSMENT_KEY = "opc-pending-assessment";
 const DEFAULT_ADMIN_PASSWORD = "opc2026";
+
+const assessmentMeta = {
+  business: {
+    eyebrow: "COMMERCIAL CAPABILITY · 17 QUESTIONS",
+    title: "商业能力测评",
+    shortTitle: "商业测评",
+    description: "看清六维商业能力、OPC等级与最适合你的女性赛道。",
+    detail: "17道情境题，从内容、商业判断、AI工具、销售、学习与影响力六个维度，计算你的真实商业潜力。",
+    duration: "约3分钟",
+    output: "六维图谱 · L1-L9等级 · Top3赛道",
+    path: "/assessments/business",
+  },
+  ai: {
+    eyebrow: "AI TOOL READINESS · 12 QUESTIONS",
+    title: "AI工具测评",
+    shortTitle: "AI测评",
+    description: "识别你的AI工作流成熟度，找到最需要补齐的工具环节。",
+    detail: "12道情境题，覆盖提示词、内容生产、自动化、私域、数据复盘与工具成本，给出一条可执行的升级建议。",
+    duration: "约3分钟",
+    output: "六项能力 · 核心短板 · 工具行动建议",
+    path: "/assessments/ai",
+  },
+  opc: {
+    eyebrow: "PRIVATE OPC DOSSIER · COMPLETE JOURNEY",
+    title: "OPC综合定位",
+    shortTitle: "OPC定位",
+    description: "把商业能力与AI工具能力合并，生成你的个人商业定位档案。",
+    detail: "依次完成商业能力与AI工具测评，在18个女性赛道中计算Top3，生成等级、定位、短板与30天启动路径。",
+    duration: "约6分钟",
+    output: "个人定位卡 · 18赛道 · 30天启动路线",
+    path: "/assessments/opc",
+  },
+};
+
+const viewPaths = {
+  home: "/",
+  "business-intro": assessmentMeta.business.path,
+  business: `${assessmentMeta.business.path}/test`,
+  "business-result": `${assessmentMeta.business.path}/result`,
+  "ai-intro": assessmentMeta.ai.path,
+  ai: `${assessmentMeta.ai.path}/test`,
+  "ai-result": `${assessmentMeta.ai.path}/result`,
+  "opc-intro": assessmentMeta.opc.path,
+  card: `${assessmentMeta.opc.path}/result`,
+  login: "/login",
+  account: "/account",
+  "admin-login": "/admin/login",
+  admin: "/admin",
+};
+
+function viewFromPath(pathname) {
+  const normalized = pathname !== "/" ? pathname.replace(/\/+$/, "") : pathname;
+  const match = Object.entries(viewPaths).find(([, path]) => path === normalized);
+  if (!match) return "home";
+  if (["business", "business-result", "ai", "ai-result", "card"].includes(match[0])) {
+    return match[0].endsWith("result") || match[0] === "card"
+      ? match[0].replace("business-result", "business-intro").replace("ai-result", "ai-intro").replace("card", "opc-intro")
+      : match[0];
+  }
+  return match[0];
+}
 
 const sampleAdminRecords = [
   {
@@ -217,28 +284,39 @@ function formatAdminTime(date = new Date()) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function buildAdminRecord(recordId, business, ai, leadInfo = {}) {
-  const primary = business.recommendedCategories[0];
+function buildAssessmentRecord(recordId, assessmentType, business, ai, leadInfo = {}) {
+  const primary = business?.recommendedCategories?.[0] ?? null;
   const name = leadInfo.name?.trim() || "当前访客";
   const phone = leadInfo.phone?.trim() || "未留资";
+  const source = assessmentMeta[assessmentType]?.title || "完整OPC测评";
+  const note = assessmentType === "business"
+    ? `主推${primary?.short || "待计算"}，商业潜力${business?.totalScore ?? 0}分。`
+    : assessmentType === "ai"
+      ? `AI工具短板为${ai?.weakest || "待计算"}，综合熟练度${ai?.total ?? 0}分。`
+      : `主推${primary?.short || "待计算"}，优先补${ai?.weakest || "AI工具流程"}。`;
   return {
     id: recordId,
+    assessmentType,
     name,
     phone,
     createdAt: formatAdminTime(),
-    level: business.level.level,
-    levelName: business.level.name,
-    businessScore: business.totalScore,
-    aiScore: ai.total,
-    credit: creditScore(business),
-    category: primary.name,
-    match: primary.match,
-    aiWeakness: ai.weakest,
+    level: business?.level?.level || "",
+    levelName: business?.level?.name || "",
+    businessScore: business?.totalScore ?? null,
+    aiScore: ai?.total ?? null,
+    credit: business ? creditScore(business) : null,
+    category: primary?.name || "",
+    match: primary?.match ?? null,
+    aiWeakness: ai?.weakest || "",
     status: "待跟进",
     owner: "未分配",
-    source: "完整OPC测评",
-    note: `主推${primary.short}，优先补${ai.weakest}。`,
+    source,
+    note,
   };
+}
+
+function buildAdminRecord(recordId, business, ai, leadInfo = {}) {
+  return buildAssessmentRecord(recordId, "opc", business, ai, leadInfo);
 }
 
 function upsertAdminRecord(record) {
@@ -295,6 +373,7 @@ function getAdminAccessKey() {
 
 async function requestJson(path, options = {}) {
   const response = await fetch(path, {
+    credentials: "same-origin",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -308,9 +387,10 @@ async function requestJson(path, options = {}) {
   return payload;
 }
 
-async function saveAssessmentRecord({ record, business, ai, businessAnswers, aiAnswers }) {
+async function saveAssessmentRecord({ assessmentType = "opc", record, business, ai, businessAnswers = [], aiAnswers = [] }) {
   upsertAdminRecord({
     ...record,
+    assessmentType,
     businessResult: business,
     aiResult: ai,
     businessAnswers,
@@ -319,6 +399,7 @@ async function saveAssessmentRecord({ record, business, ai, businessAnswers, aiA
   const payload = await requestJson("/api/records", {
     method: "POST",
     body: JSON.stringify({
+      assessmentType,
       record,
       businessResult: business,
       aiResult: ai,
@@ -328,6 +409,52 @@ async function saveAssessmentRecord({ record, business, ai, businessAnswers, aiA
   });
   if (payload.record) upsertAdminRecord(payload.record);
   return payload.record;
+}
+
+async function registerUser(form) {
+  const payload = await requestJson("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify(form),
+  });
+  return payload.user;
+}
+
+async function loginUser(form) {
+  const payload = await requestJson("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify(form),
+  });
+  return payload.user;
+}
+
+async function fetchCurrentUser() {
+  const payload = await requestJson("/api/auth/me");
+  return payload.user ?? null;
+}
+
+async function logoutUser() {
+  return requestJson("/api/auth/logout", { method: "POST", body: "{}" });
+}
+
+async function fetchUserRecords() {
+  const payload = await requestJson("/api/me/records");
+  return Array.isArray(payload.records) ? payload.records : [];
+}
+
+async function shareAssessment(type, setFeedback) {
+  const meta = assessmentMeta[type];
+  const url = new URL(meta.path, window.location.origin).toString();
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: `她智汇｜${meta.title}`, text: meta.description, url });
+      setFeedback?.("已打开分享");
+    } else {
+      await navigator.clipboard.writeText(url);
+      setFeedback?.("链接已复制");
+    }
+  } catch (error) {
+    if (error?.name !== "AbortError") setFeedback?.("暂时无法分享");
+  }
 }
 
 async function fetchAdminRecords() {
@@ -490,14 +617,22 @@ function buildBespokeRoute(business, ai) {
   ];
 }
 
-function AppHeader({ view, onNavigate, adminLoggedIn }) {
+function AppHeader({ view, onNavigate, adminLoggedIn, currentUser }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const nav = [
     ["home", "首页"],
-    ["business", "商业测评"],
-    ["ai", "AI工具测评"],
-    ["card", "OPC定位卡"],
+    ["business-intro", "商业测评"],
+    ["ai-intro", "AI工具测评"],
+    ["opc-intro", "OPC定位"],
   ];
+
+  const activeNav = view.startsWith("business")
+    ? "business-intro"
+    : view.startsWith("ai")
+      ? "ai-intro"
+      : view === "card" || view === "opc-intro"
+        ? "opc-intro"
+        : view;
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -538,10 +673,10 @@ function AppHeader({ view, onNavigate, adminLoggedIn }) {
       <nav className="desktop-nav" aria-label="主导航">
         {nav.map(([key, label]) => (
           <button
-            className={view === key ? "active" : ""}
+            className={activeNav === key ? "active" : ""}
             key={key}
             type="button"
-            aria-current={view === key ? "page" : undefined}
+            aria-current={activeNav === key ? "page" : undefined}
             onClick={() => navigateTo(key)}
           >
             {label}
@@ -553,16 +688,19 @@ function AppHeader({ view, onNavigate, adminLoggedIn }) {
           <nav aria-label="移动导航">
             {nav.map(([key, label]) => (
               <button
-                className={view === key ? "active" : ""}
+                className={activeNav === key ? "active" : ""}
                 key={key}
                 type="button"
-                aria-current={view === key ? "page" : undefined}
+                aria-current={activeNav === key ? "page" : undefined}
                 onClick={() => navigateTo(key)}
               >
                 {label}
               </button>
             ))}
           </nav>
+          <button className="mobile-account-link" type="button" onClick={() => navigateTo(currentUser ? "account" : "login")}>
+            <UserCircle size={19} /> {currentUser ? `${currentUser.name}的测评档案` : "登录 / 注册"}
+          </button>
           <button className="mobile-admin-link" type="button" onClick={() => navigateTo(adminLoggedIn ? "admin" : "admin-login")}>
             {adminLoggedIn ? "进入管理后台" : "管理员登录"}
           </button>
@@ -571,10 +709,11 @@ function AppHeader({ view, onNavigate, adminLoggedIn }) {
       <button
         className="auth-pill"
         type="button"
-        aria-current={view === "admin" || view === "admin-login" ? "page" : undefined}
-        onClick={() => navigateTo(adminLoggedIn ? "admin" : "admin-login")}
+        aria-current={view === "account" || view === "login" ? "page" : undefined}
+        onClick={() => navigateTo(currentUser ? "account" : "login")}
       >
-        {adminLoggedIn ? "管理后台" : "管理员登录"}
+        <UserCircle size={19} weight="light" />
+        {currentUser ? currentUser.name : "登录 / 注册"}
       </button>
     </header>
   );
@@ -601,6 +740,234 @@ function FlowStepper({ current, completed = [] }) {
         );
       })}
     </section>
+  );
+}
+
+function AssessmentEntry({ type, onStart, onNavigate }) {
+  const meta = assessmentMeta[type];
+  const [shareFeedback, setShareFeedback] = useState("");
+  const sequence = type === "business"
+    ? ["六维商业能力", "L1-L9等级", "女性赛道Top3"]
+    : type === "ai"
+      ? ["六项AI能力", "优先短板", "效率升级动作"]
+      : ["商业能力", "AI工具能力", "个人OPC定位卡"];
+
+  useEffect(() => {
+    if (!shareFeedback) return undefined;
+    const timer = window.setTimeout(() => setShareFeedback(""), 1800);
+    return () => window.clearTimeout(timer);
+  }, [shareFeedback]);
+
+  return (
+    <main className={`page-shell assessment-entry-shell assessment-entry-${type}`} style={{ "--entry-velvet": `url(${oxbloodVelvet})` }}>
+      <section className="assessment-entry-hero">
+        <div className="entry-hero-copy">
+          <button className="entry-back" type="button" onClick={() => onNavigate("home")}>
+            <ArrowLeft size={17} /> 返回首页
+          </button>
+          <span className="document-kicker">{meta.eyebrow}</span>
+          <h1>{meta.title}</h1>
+          <p className="entry-lead">{meta.description}</p>
+          <p className="entry-detail">{meta.detail}</p>
+          <div className="entry-facts" aria-label="测评信息">
+            <span>{meta.duration}</span>
+            <span>{meta.output}</span>
+          </div>
+          <div className="entry-actions">
+            <button className="entry-primary" type="button" onClick={() => onStart(type)}>
+              开始{meta.shortTitle} <ArrowRight size={19} />
+            </button>
+            <button className="entry-share" type="button" onClick={() => shareAssessment(type, setShareFeedback)}>
+              <ShareNetwork size={19} /> {shareFeedback || "分享这个测评"}
+            </button>
+          </div>
+        </div>
+        <div className="entry-index-panel" aria-label="结果生成路径">
+          <span>PRIVATE ASSESSMENT</span>
+          <strong>0{type === "business" ? 1 : type === "ai" ? 2 : 3}</strong>
+          <ol>
+            {sequence.map((item, index) => (
+              <li key={item}><em>{String(index + 1).padStart(2, "0")}</em><span>{item}</span></li>
+            ))}
+          </ol>
+          <small>FOR HER · BY HER</small>
+        </div>
+      </section>
+
+      <section className="assessment-entry-switcher" aria-label="其他测评">
+        <div>
+          <span>THREE INDEPENDENT ASSESSMENTS</span>
+          <h2>也可以单独完成另外两项</h2>
+        </div>
+        <div className="entry-switcher-links">
+          {Object.entries(assessmentMeta).map(([key, item]) => (
+            <button className={key === type ? "active" : ""} type="button" key={key} onClick={() => onNavigate(`${key}-intro`)}>
+              <span>0{key === "business" ? 1 : key === "ai" ? 2 : 3}</span>
+              <strong>{item.title}</strong>
+              <ArrowRight size={17} />
+            </button>
+          ))}
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function UserAuthPage({ onAuthenticated, onNavigate }) {
+  const [mode, setMode] = useState("login");
+  const [form, setForm] = useState({ name: "", phone: "", password: "" });
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setError("");
+    setSubmitting(true);
+    try {
+      const user = mode === "register"
+        ? await registerUser(form)
+        : await loginUser({ phone: form.phone, password: form.password });
+      onAuthenticated(user);
+    } catch (requestError) {
+      setError(requestError.message || "登录失败，请稍后重试。");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <main className="user-auth-shell" style={{ "--auth-velvet": `url(${oxbloodVelvet})` }}>
+      <section className="auth-editorial-panel">
+        <button className="auth-back" type="button" onClick={() => onNavigate("home")}>
+          <ArrowLeft size={18} /> 返回她智汇
+        </button>
+        <div className="auth-editorial-copy">
+          <span>PRIVATE MEMBER ARCHIVE</span>
+          <h1>让每一次测评，<br />成为你的商业档案。</h1>
+          <p>登录后保存商业能力、AI工具与OPC定位结果。换一台设备，也能继续查看自己的成长记录。</p>
+        </div>
+        <div className="auth-signature-row">
+          <strong className="atelier-signature">她智汇</strong>
+          <span>FOR HER · BY HER</span>
+        </div>
+      </section>
+
+      <section className="auth-form-panel" aria-labelledby="user-auth-title">
+        <div className="auth-form-inner">
+          <span className="document-kicker">MEMBER ACCESS</span>
+          <h2 id="user-auth-title">{mode === "login" ? "欢迎回来" : "建立你的私人档案"}</h2>
+          <p>{mode === "login" ? "登录后查看并继续你的测评记录。" : "只需一次注册，三项测评会自动归入你的账号。"}</p>
+          <div className="auth-mode-tabs" role="tablist" aria-label="登录或注册">
+            <button className={mode === "login" ? "active" : ""} type="button" role="tab" aria-selected={mode === "login"} onClick={() => { setMode("login"); setError(""); }}>登录</button>
+            <button className={mode === "register" ? "active" : ""} type="button" role="tab" aria-selected={mode === "register"} onClick={() => { setMode("register"); setError(""); }}>注册</button>
+          </div>
+          <form className="user-auth-form" onSubmit={handleSubmit}>
+            {mode === "register" && (
+              <label>
+                <span>姓名</span>
+                <div><UserCircle size={20} /><input autoComplete="name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="你的姓名" required /></div>
+              </label>
+            )}
+            <label>
+              <span>手机号</span>
+              <div><Phone size={20} /><input type="tel" inputMode="tel" autoComplete="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} placeholder="用于登录和保存结果" required /></div>
+            </label>
+            <label>
+              <span>密码</span>
+              <div><LockKey size={20} /><input type="password" minLength={8} maxLength={72} autoComplete={mode === "login" ? "current-password" : "new-password"} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} placeholder="至少8位" required /></div>
+            </label>
+            {error && <p className="user-auth-error" role="alert">{error}</p>}
+            <button className="user-auth-submit" type="submit" disabled={submitting}>
+              {submitting ? "正在进入" : mode === "login" ? "登录我的档案" : "注册并继续"} <ArrowRight size={18} />
+            </button>
+          </form>
+          <button className="admin-entry-link" type="button" onClick={() => onNavigate("admin-login")}>管理员入口</button>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function UserAccountPage({ currentUser, onNavigate, onLogout }) {
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [shareFeedback, setShareFeedback] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    fetchUserRecords()
+      .then((items) => { if (active) setRecords(items); })
+      .catch((requestError) => { if (active) setError(requestError.message || "记录加载失败。"); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  function recordSummary(record) {
+    if (record.assessmentType === "ai") return `${record.aiScore ?? 0}分 · 优先补齐${record.aiWeakness || "工具流程"}`;
+    if (record.assessmentType === "business") return `${record.level} ${record.levelName} · ${record.category}`;
+    return `${record.level} ${record.levelName} · ${record.category} · AI短板${record.aiWeakness}`;
+  }
+
+  return (
+    <main className="page-shell account-shell">
+      <section className="account-head">
+        <div>
+          <span className="document-kicker">PRIVATE MEMBER ARCHIVE</span>
+          <h1>{currentUser.name}的测评档案</h1>
+          <p>{currentUser.phone} · 你的三项测评结果都会保存在这里。</p>
+        </div>
+        <button className="account-logout" type="button" onClick={onLogout}><SignOut size={18} />退出登录</button>
+      </section>
+
+      <section className="account-overview" aria-label="测评概览">
+        {Object.entries(assessmentMeta).map(([type, meta], index) => {
+          const count = records.filter((record) => record.assessmentType === type).length;
+          return (
+            <article key={type}>
+              <span>0{index + 1}</span>
+              <div><strong>{meta.title}</strong><small>{count ? `已完成 ${count} 次` : "尚未完成"}</small></div>
+              <button type="button" onClick={() => onNavigate(`${type}-intro`)}>{count ? "再次测评" : "开始测评"}<ArrowRight size={16} /></button>
+            </article>
+          );
+        })}
+      </section>
+
+      <section className="account-record-section">
+        <div className="account-section-title">
+          <div><span>ASSESSMENT HISTORY</span><h2>我的历史结果</h2></div>
+          <strong>{records.length} 份档案</strong>
+        </div>
+        {loading && <p className="account-state">正在整理你的测评档案...</p>}
+        {error && <p className="account-state is-error" role="alert">{error}</p>}
+        {!loading && !error && !records.length && (
+          <div className="account-empty"><strong>还没有测评记录</strong><p>从一项独立测评开始，结果会自动保存到这里。</p><button type="button" onClick={() => onNavigate("business-intro")}>开始商业测评 <ArrowRight size={17} /></button></div>
+        )}
+        <div className="account-record-list">
+          {records.map((record) => {
+            const type = record.assessmentType || "opc";
+            const meta = assessmentMeta[type] || assessmentMeta.opc;
+            return (
+              <article className={`account-record account-record-${type}`} key={record.id}>
+                <div className="account-record-index"><span>{meta.shortTitle}</span><strong>{type === "ai" ? record.aiScore : record.level || "OPC"}</strong></div>
+                <div className="account-record-main"><small>{record.createdAt?.replace("T", " ").slice(0, 16)}</small><h3>{recordSummary(record)}</h3><p>{record.note}</p></div>
+                <div className="account-record-actions">
+                  <button type="button" onClick={() => shareAssessment(type, (message) => { setShareFeedback(`${record.id}:${message}`); window.setTimeout(() => setShareFeedback(""), 1800); })}><ShareNetwork size={17} />{shareFeedback.startsWith(record.id) ? shareFeedback.split(":")[1] : "分享测评"}</button>
+                  <button type="button" onClick={() => onNavigate(`${type}-intro`)}>重新测评 <ArrowRight size={16} /></button>
+                </div>
+                {(record.businessResult || record.aiResult) && (
+                  <details className="account-record-detail">
+                    <summary>查看详细结果</summary>
+                    {record.businessResult && <><p><strong>商业总分</strong>{record.businessResult.totalScore} / 100</p><p><strong>最强维度</strong>{record.businessResult.strongestDim}</p><p><strong>Top3赛道</strong>{record.businessResult.recommendedCategories?.map((item) => `${item.short} ${item.match}%`).join(" · ")}</p></>}
+                    {record.aiResult && <><p><strong>AI总分</strong>{record.aiResult.total} / 100</p><p><strong>最强能力</strong>{record.aiResult.strongest}</p><p><strong>优先短板</strong>{record.aiResult.weakest}</p></>}
+                  </details>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      </section>
+    </main>
   );
 }
 
@@ -1092,7 +1459,127 @@ function CategoryGrid() {
   );
 }
 
-function BusinessAssessment({ answers, setAnswers, setView, businessResult }) {
+function StandaloneAssessmentHead({ type, onBack }) {
+  const meta = assessmentMeta[type];
+  return (
+    <section className="standalone-assessment-head">
+      <button type="button" onClick={onBack}><ArrowLeft size={17} />退出测评</button>
+      <div><span>{meta.eyebrow}</span><strong>{meta.title}</strong></div>
+      <small>{meta.duration}</small>
+    </section>
+  );
+}
+
+function BusinessStandaloneResult({ businessResult, answers, sessionRecordId, leadInfo, setView }) {
+  const business = businessResult ?? calculateBusiness(fallbackAnswers(commercialQuestions));
+  const [saveState, setSaveState] = useState("正在保存");
+  const [shareFeedback, setShareFeedback] = useState("");
+  const savedKey = useRef("");
+
+  useEffect(() => {
+    if (!businessResult || !hasLeadInfo(leadInfo)) return;
+    const record = buildAssessmentRecord(sessionRecordId, "business", business, null, leadInfo);
+    const key = `${record.id}:${record.businessScore}`;
+    if (savedKey.current === key) return;
+    savedKey.current = key;
+    saveAssessmentRecord({ assessmentType: "business", record, business, businessAnswers: answers })
+      .then(() => setSaveState("已保存到我的档案"))
+      .catch(() => { savedKey.current = ""; setSaveState("保存失败，请稍后重试"); });
+  }, [answers, business, businessResult, leadInfo, sessionRecordId]);
+
+  return (
+    <main className="page-shell standalone-result-shell business-result-shell">
+      <section className="standalone-result-hero">
+        <div>
+          <span className="document-kicker">COMMERCIAL CAPABILITY RESULT</span>
+          <h1>你的商业能力，<br />已经形成清晰轮廓。</h1>
+          <p>{leadInfo?.name}，你当前处于 <strong>{business.level.level} · {business.level.name}</strong>，最值得放大的能力是{business.strongestDim}。</p>
+          <small>{saveState}</small>
+        </div>
+        <div className="standalone-result-score"><span>商业综合分</span><strong>{business.totalScore}</strong><small>/ 100</small></div>
+      </section>
+
+      <section className="business-result-grid">
+        <div className="result-radar-panel">
+          <div><span>01 · CAPABILITY MAP</span><h2>六维商业能力</h2></div>
+          <RadarChart scores={business.percentScores} />
+          <p className="sr-only">{dimensions.map((dimension) => `${dimension}${business.percentScores[dimension]}分`).join("，")}</p>
+        </div>
+        <div className="result-dimension-ledger">
+          {buildDimensionReport(business).map((item) => (
+            <div key={item.dimension}>
+              <span><strong>{item.dimension}</strong><small>{item.tier.label}</small></span>
+              <i><b style={{ width: `${item.score}%` }} /></i>
+              <em>{item.score}</em>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="standalone-top-section">
+        <div className="standalone-section-title"><span>02 · TRACK MATCHING</span><h2>最适合你的女性赛道</h2><p>六维能力进入18品类权重矩阵后，得到以下Top3。</p></div>
+        <div className="standalone-top-list">
+          {business.recommendedCategories.map((category, index) => (
+            <article key={category.name}><em>0{index + 1}</em><div><small>{index === 0 ? "首选赛道" : "潜力赛道"}</small><strong>{category.name}</strong><span>{category.gate} · {category.income}</span></div><b>{category.match}%</b></article>
+          ))}
+        </div>
+      </section>
+
+      <StandaloneResultActions type="business" shareFeedback={shareFeedback} setShareFeedback={setShareFeedback} onAccount={() => setView("account")} onRestart={() => setView("business-intro")} />
+    </main>
+  );
+}
+
+function AiStandaloneResult({ aiResult, answers, sessionRecordId, leadInfo, setView }) {
+  const ai = aiResult ?? calculateAi(fallbackAnswers(aiQuestions));
+  const [saveState, setSaveState] = useState("正在保存");
+  const [shareFeedback, setShareFeedback] = useState("");
+  const savedKey = useRef("");
+
+  useEffect(() => {
+    if (!aiResult || !hasLeadInfo(leadInfo)) return;
+    const record = buildAssessmentRecord(sessionRecordId, "ai", null, ai, leadInfo);
+    const key = `${record.id}:${record.aiScore}`;
+    if (savedKey.current === key) return;
+    savedKey.current = key;
+    saveAssessmentRecord({ assessmentType: "ai", record, ai, aiAnswers: answers })
+      .then(() => setSaveState("已保存到我的档案"))
+      .catch(() => { savedKey.current = ""; setSaveState("保存失败，请稍后重试"); });
+  }, [ai, aiResult, answers, leadInfo, sessionRecordId]);
+
+  const orderedAreas = [...ai.areas].sort((left, right) => ai.percent[right] - ai.percent[left]);
+  return (
+    <main className="page-shell standalone-result-shell ai-result-shell">
+      <section className="standalone-result-hero">
+        <div><span className="document-kicker">AI TOOL READINESS RESULT</span><h1>你的AI效率，<br />不该只靠临时发挥。</h1><p>{leadInfo?.name}，你当前的AI综合熟练度为 <strong>{ai.total}分</strong>，优先补齐{ai.weakest}，会最快看到效率变化。</p><small>{saveState}</small></div>
+        <div className="standalone-result-score"><span>AI综合熟练度</span><strong>{ai.total}</strong><small>/ 100</small></div>
+      </section>
+      <section className="ai-result-ledger">
+        <div className="standalone-section-title"><span>01 · AI CAPABILITY MAP</span><h2>六项工具能力</h2><p>每一项都来自你的真实答题，不使用模糊标签替代结果。</p></div>
+        <div className="ai-result-bars">
+          {orderedAreas.map((area, index) => (
+            <div className={area === ai.weakest ? "is-priority" : ""} key={area}><em>0{index + 1}</em><span><strong>{area}</strong><small>{area === ai.weakest ? "优先补齐" : area === ai.strongest ? "当前优势" : "继续稳定"}</small></span><i><b style={{ width: `${ai.percent[area]}%` }} /></i><b>{ai.percent[area]}</b></div>
+          ))}
+        </div>
+      </section>
+      <section className="ai-action-prescription"><span>02 · FIRST ACTION</span><h2>先从{ai.weakest}开始</h2><p>{aiActionCopy[ai.weakest]}把这一步做成固定动作，再增加新的AI工具。</p><div><strong>本周建议</strong><span>选择一个重复频率最高的任务，保留输入、提示词、输出和修改记录，连续复用三次。</span></div></section>
+      <StandaloneResultActions type="ai" shareFeedback={shareFeedback} setShareFeedback={setShareFeedback} onAccount={() => setView("account")} onRestart={() => setView("ai-intro")} />
+    </main>
+  );
+}
+
+function StandaloneResultActions({ type, shareFeedback, setShareFeedback, onAccount, onRestart }) {
+  return (
+    <section className="standalone-result-actions">
+      <div><span>YOUR PRIVATE ARCHIVE</span><h2>结果已进入你的私人档案</h2></div>
+      <button type="button" onClick={onAccount}>查看我的测评 <UserCircle size={18} /></button>
+      <button type="button" onClick={() => shareAssessment(type, setShareFeedback)}><ShareNetwork size={18} />{shareFeedback || "分享这个测评"}</button>
+      <button type="button" onClick={onRestart}>重新测评</button>
+    </section>
+  );
+}
+
+function BusinessAssessment({ answers, setAnswers, setView, businessResult, standalone = false }) {
   const [index, setIndex] = useState(0);
   const question = commercialQuestions[index];
   const selected = answers[index];
@@ -1111,13 +1598,13 @@ function BusinessAssessment({ answers, setAnswers, setView, businessResult }) {
     if (index < commercialQuestions.length - 1) {
       setIndex(index + 1);
     } else {
-      setView("ai");
+      setView(standalone ? "business-result" : "ai");
     }
   }
 
   return (
     <main className="page-shell assessment-shell">
-      <FlowStepper current="business" completed={businessResult ? ["business"] : []} />
+      {standalone ? <StandaloneAssessmentHead type="business" onBack={() => setView("business-intro")} /> : <FlowStepper current="business" completed={businessResult ? ["business"] : []} />}
       <section className="assessment-layout">
         <aside className="side-summary">
           <span className="eyebrow">Step 1</span>
@@ -1172,7 +1659,7 @@ function BusinessAssessment({ answers, setAnswers, setView, businessResult }) {
               上一题
             </button>
             <button className="primary-btn compact" type="button" onClick={nextQuestion} disabled={selected === undefined}>
-              {index === commercialQuestions.length - 1 ? "进入AI工具测评" : "下一题"} <ArrowRight size={17} />
+              {index === commercialQuestions.length - 1 ? standalone ? "查看商业测评结果" : "进入AI工具测评" : "下一题"} <ArrowRight size={17} />
             </button>
           </div>
         </section>
@@ -1199,7 +1686,7 @@ function BusinessAssessment({ answers, setAnswers, setView, businessResult }) {
   );
 }
 
-function AiAssessment({ aiAnswers, setAiAnswers, setView, businessResult, aiResult }) {
+function AiAssessment({ aiAnswers, setAiAnswers, setView, businessResult, aiResult, standalone = false }) {
   const [index, setIndex] = useState(0);
   const question = aiQuestions[index];
   const selected = aiAnswers[index];
@@ -1219,19 +1706,19 @@ function AiAssessment({ aiAnswers, setAiAnswers, setView, businessResult, aiResu
     if (index < aiQuestions.length - 1) {
       setIndex(index + 1);
     } else {
-      setView("card");
+      setView(standalone ? "ai-result" : "card");
     }
   }
 
   return (
     <main className="page-shell assessment-shell">
-      <FlowStepper current="ai" completed={["business"].concat(aiResult ? ["ai"] : [])} />
+      {standalone ? <StandaloneAssessmentHead type="ai" onBack={() => setView("ai-intro")} /> : <FlowStepper current="ai" completed={["business"].concat(aiResult ? ["ai"] : [])} />}
       <section className="assessment-layout ai-layout">
         <aside className="side-summary completed">
-          <span className="eyebrow">商业测评已完成</span>
-          <h1>{business.level.level} · {business.level.name}</h1>
-          <p>当前Top3品类：{business.recommendedCategories.map((item) => item.short).join(" / ")}</p>
-          <RadarChart scores={business.percentScores} compact />
+          <span className="eyebrow">{standalone ? "AI TOOL READINESS" : "商业测评已完成"}</span>
+          <h1>{standalone ? "AI工具能力测评" : `${business.level.level} · ${business.level.name}`}</h1>
+          <p>{standalone ? "识别六项工具能力成熟度，找到最需要优先补齐的环节。" : `当前Top3品类：${business.recommendedCategories.map((item) => item.short).join(" / ")}`}</p>
+          {standalone ? <div className="ai-standalone-seal"><MagicWand size={42} weight="thin" /><span>12题 · 六项能力</span></div> : <RadarChart scores={business.percentScores} compact />}
         </aside>
 
         <section className="question-panel">
@@ -1273,7 +1760,7 @@ function AiAssessment({ aiAnswers, setAiAnswers, setView, businessResult, aiResu
               上一题
             </button>
             <button className="primary-btn compact" type="button" onClick={nextQuestion} disabled={selected === undefined}>
-              {index === aiQuestions.length - 1 ? "生成OPC定位卡" : "下一题"} <ArrowRight size={17} />
+              {index === aiQuestions.length - 1 ? standalone ? "查看AI测评结果" : "生成OPC定位卡" : "下一题"} <ArrowRight size={17} />
             </button>
           </div>
         </section>
@@ -2131,9 +2618,9 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
                         <span>{record.phone}</span>
                       </button>
                     </td>
-                    <td><strong>{record.level}</strong><span>{record.credit}</span></td>
-                    <td>{record.category}<small>{record.match}%</small></td>
-                    <td>{record.aiWeakness}</td>
+                    <td><strong>{record.level || (record.assessmentType === "ai" ? "AI" : "—")}</strong><span>{record.credit ?? record.aiScore ?? "—"}</span></td>
+                    <td>{record.category || "—"}{record.match != null && <small>{record.match}%</small>}</td>
+                    <td>{record.aiWeakness || "—"}</td>
                     <td>
                       <select
                         value={record.status}
@@ -2188,20 +2675,20 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
               </div>
             </div>
             <div className="admin-detail-metrics">
-              <Metric label="OPC等级" value={`${selectedRecord.level} ${selectedRecord.levelName}`} />
-              <Metric label="她信分" value={selectedRecord.credit} />
-              <Metric label="商业测评" value={`${selectedRecord.businessScore}分`} />
+              <Metric label="测评类型" value={assessmentMeta[selectedRecord.assessmentType]?.shortTitle || "OPC定位"} />
+              <Metric label="核心得分" value={selectedRecord.businessScore != null ? `${selectedRecord.businessScore}分` : `${selectedRecord.aiScore ?? "—"}分`} />
+              <Metric label="OPC等级" value={selectedRecord.level ? `${selectedRecord.level} ${selectedRecord.levelName}` : "单项测评"} />
             </div>
             <div className="admin-detail-list">
-              <div><span>推荐品类</span><strong>{selectedRecord.category} · {selectedRecord.match}%</strong></div>
-              <div><span>AI工具短板</span><strong>{selectedRecord.aiWeakness}</strong></div>
+              <div><span>推荐品类</span><strong>{selectedRecord.category ? `${selectedRecord.category} · ${selectedRecord.match}%` : "本次未测"}</strong></div>
+              <div><span>AI工具短板</span><strong>{selectedRecord.aiWeakness || "本次未测"}</strong></div>
               <div><span>来源</span><strong>{selectedRecord.source}</strong></div>
               <div><span>负责顾问</span><strong>{selectedRecord.owner}</strong></div>
             </div>
 
-            {selectedBusiness && selectedAi ? (
+            {selectedBusiness || selectedAi ? (
               <div className="admin-full-results">
-                <section className="admin-result-section">
+                {selectedBusiness && <section className="admin-result-section">
                   <div className="admin-result-title">
                     <span>01</span>
                     <div><small>BUSINESS PROFILE</small><h3>商业能力详细结果</h3></div>
@@ -2218,9 +2705,9 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
                       ))}
                     </div>
                   </div>
-                </section>
+                </section>}
 
-                <section className="admin-result-section">
+                {selectedBusiness && <section className="admin-result-section">
                   <div className="admin-result-title">
                     <span>02</span>
                     <div><small>TRACK MATCHING</small><h3>推荐赛道 Top3</h3></div>
@@ -2235,9 +2722,9 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
                       </div>
                     ))}
                   </div>
-                </section>
+                </section>}
 
-                <section className="admin-result-section admin-ai-results">
+                {selectedAi && <section className="admin-result-section admin-ai-results">
                   <div className="admin-result-title">
                     <span>03</span>
                     <div><small>AI CAPABILITY</small><h3>AI工具能力与短板</h3></div>
@@ -2249,9 +2736,9 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
                       <em>{selectedAi.percent[area]}</em>
                     </div>
                   ))}
-                </section>
+                </section>}
 
-                <section className="admin-result-section">
+                {selectedRoute.length > 0 && <section className="admin-result-section">
                   <div className="admin-result-title">
                     <span>04</span>
                     <div><small>ACTION ROUTE</small><h3>30天启动路径</h3></div>
@@ -2264,7 +2751,7 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
                       </article>
                     ))}
                   </div>
-                </section>
+                </section>}
 
                 <section className="admin-answer-results">
                   <div className="admin-result-title">
@@ -2435,11 +2922,21 @@ function RadarChart({ scores, compact = false, mobile = false }) {
 }
 
 export function App() {
-  const [view, setView] = useState("home");
+  const [view, setViewState] = useState(() => (
+    typeof window === "undefined" ? "home" : viewFromPath(window.location.pathname)
+  ));
   const [answers, setAnswers] = useState([]);
   const [aiAnswers, setAiAnswers] = useState([]);
   const [sessionRecordId, setSessionRecordId] = useState(() => `OPC-${Date.now().toString(36).toUpperCase()}`);
   const [leadInfo, setLeadInfo] = useState(() => readStoredLeadInfo());
+  const [assessmentMode, setAssessmentMode] = useState(() => {
+    if (typeof window === "undefined") return "opc";
+    if (window.location.pathname.includes("/assessments/business")) return "business";
+    if (window.location.pathname.includes("/assessments/ai")) return "ai";
+    return "opc";
+  });
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
   const [adminLoggedIn, setAdminLoggedIn] = useState(() => {
     if (typeof window === "undefined") return false;
     try {
@@ -2455,6 +2952,48 @@ export function App() {
   const aiResult = useMemo(() => (
     isAssessmentComplete(aiAnswers, aiQuestions) ? calculateAi(aiAnswers) : null
   ), [aiAnswers]);
+
+  function navigate(nextView, { replace = false } = {}) {
+    const path = viewPaths[nextView] || "/";
+    if (typeof window !== "undefined" && window.location.pathname !== path) {
+      window.history[replace ? "replaceState" : "pushState"]({ view: nextView }, "", path);
+    }
+    setViewState(nextView);
+  }
+
+  useEffect(() => {
+    function handlePopState(event) {
+      const historyView = event.state?.view;
+      setViewState(viewPaths[historyView] ? historyView : viewFromPath(window.location.pathname));
+    }
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetchCurrentUser()
+      .then((user) => {
+        if (!active) return;
+        setCurrentUser(user);
+        if (user) {
+          const info = { name: user.name, phone: user.phone };
+          setLeadInfo(info);
+          writeStoredLeadInfo(info);
+        }
+      })
+      .catch(() => { if (active) setCurrentUser(null); })
+      .finally(() => { if (active) setAuthReady(true); });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!authReady || currentUser) return;
+    if (!["business", "ai", "business-result", "ai-result", "account"].includes(view)) return;
+    const pendingType = view.startsWith("business") ? "business" : view.startsWith("ai") ? "ai" : "";
+    if (pendingType) window.sessionStorage.setItem(PENDING_ASSESSMENT_KEY, pendingType);
+    navigate("login", { replace: true });
+  }, [authReady, currentUser, view]);
 
   useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -2522,70 +3061,98 @@ export function App() {
     };
   }, [view]);
 
-  function startAssessment() {
-    if (!hasLeadInfo(leadInfo)) {
-      setView("lead");
-      return;
-    }
-    setAnswers([]);
-    setAiAnswers([]);
-    setSessionRecordId(`OPC-${Date.now().toString(36).toUpperCase()}`);
-    setView("business");
-  }
-
-  function handleLeadSubmit(info) {
+  function startAssessmentWithUser(type, user = currentUser) {
+    const info = { name: user.name, phone: user.phone };
     setLeadInfo(info);
     writeStoredLeadInfo(info);
     setAnswers([]);
     setAiAnswers([]);
-    setSessionRecordId(`OPC-${Date.now().toString(36).toUpperCase()}`);
-    setView("business");
+    setAssessmentMode(type);
+    setSessionRecordId(`${type.toUpperCase()}-${Date.now().toString(36).toUpperCase()}`);
+    navigate(type === "ai" ? "ai" : "business");
+  }
+
+  function startAssessment(type = "opc") {
+    if (!currentUser) {
+      window.sessionStorage.setItem(PENDING_ASSESSMENT_KEY, type);
+      navigate("login");
+      return;
+    }
+    startAssessmentWithUser(type);
   }
 
   function navigateView(nextView) {
-    if (nextView === "business" || nextView === "ai") {
-      if (!hasLeadInfo(leadInfo)) {
-        setView("lead");
-        return;
-      }
-      if (nextView === "ai" && !isAssessmentComplete(answers, commercialQuestions)) {
-        setView("business");
-        return;
-      }
+    if (nextView === "business" && !currentUser) {
+      window.sessionStorage.setItem(PENDING_ASSESSMENT_KEY, assessmentMode === "opc" ? "opc" : "business");
+      navigate("login");
+      return;
     }
-    setView(nextView);
+    if (nextView === "ai" && !currentUser) {
+      window.sessionStorage.setItem(PENDING_ASSESSMENT_KEY, assessmentMode === "opc" ? "opc" : "ai");
+      navigate("login");
+      return;
+    }
+    navigate(nextView);
+  }
+
+  function handleAuthenticated(user) {
+    setCurrentUser(user);
+    const info = { name: user.name, phone: user.phone };
+    setLeadInfo(info);
+    writeStoredLeadInfo(info);
+    const pendingType = window.sessionStorage.getItem(PENDING_ASSESSMENT_KEY);
+    window.sessionStorage.removeItem(PENDING_ASSESSMENT_KEY);
+    if (pendingType && assessmentMeta[pendingType]) {
+      startAssessmentWithUser(pendingType, user);
+    } else {
+      navigate("account");
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      await logoutUser();
+    } finally {
+      setCurrentUser(null);
+      setLeadInfo(null);
+      navigate("home");
+    }
   }
 
   return (
     <>
-      <AppHeader view={view} onNavigate={navigateView} adminLoggedIn={adminLoggedIn} />
-      {view === "home" && <HomePage setView={setView} onStart={startAssessment} businessResult={businessResult} />}
-      {view === "lead" && (
-        <LeadCapture initialLead={leadInfo} onSubmit={handleLeadSubmit} onBack={() => setView("home")} />
-      )}
+      <AppHeader view={view} onNavigate={navigateView} adminLoggedIn={adminLoggedIn} currentUser={currentUser} />
+      {view === "home" && <HomePage setView={navigateView} onStart={() => startAssessment("opc")} businessResult={businessResult} />}
+      {view === "business-intro" && <AssessmentEntry type="business" onStart={startAssessment} onNavigate={navigateView} />}
+      {view === "ai-intro" && <AssessmentEntry type="ai" onStart={startAssessment} onNavigate={navigateView} />}
+      {view === "opc-intro" && <AssessmentEntry type="opc" onStart={startAssessment} onNavigate={navigateView} />}
       {view === "business" && (
-        <BusinessAssessment answers={answers} setAnswers={setAnswers} setView={setView} businessResult={businessResult} />
+        <BusinessAssessment answers={answers} setAnswers={setAnswers} setView={navigateView} businessResult={businessResult} standalone={assessmentMode === "business"} />
       )}
       {view === "ai" && (
-        <AiAssessment aiAnswers={aiAnswers} setAiAnswers={setAiAnswers} setView={setView} businessResult={businessResult} aiResult={aiResult} />
+        <AiAssessment aiAnswers={aiAnswers} setAiAnswers={setAiAnswers} setView={navigateView} businessResult={businessResult} aiResult={aiResult} standalone={assessmentMode === "ai"} />
       )}
+      {view === "business-result" && <BusinessStandaloneResult businessResult={businessResult} answers={answers} sessionRecordId={sessionRecordId} leadInfo={leadInfo} setView={navigateView} />}
+      {view === "ai-result" && <AiStandaloneResult aiResult={aiResult} answers={aiAnswers} sessionRecordId={sessionRecordId} leadInfo={leadInfo} setView={navigateView} />}
       {view === "card" && (
         <PositioningCard
           businessResult={businessResult}
           aiResult={aiResult}
-          setView={setView}
+          setView={navigateView}
           sessionRecordId={sessionRecordId}
           leadInfo={leadInfo}
           businessAnswers={answers}
           aiAnswers={aiAnswers}
         />
       )}
-      {view === "admin-login" && <AdminLogin setView={setView} setAdminLoggedIn={setAdminLoggedIn} />}
+      {view === "login" && <UserAuthPage onAuthenticated={handleAuthenticated} onNavigate={navigateView} />}
+      {view === "account" && currentUser && <UserAccountPage currentUser={currentUser} onNavigate={navigateView} onLogout={handleLogout} />}
+      {view === "admin-login" && <AdminLogin setView={navigateView} setAdminLoggedIn={setAdminLoggedIn} />}
       {view === "admin" && (
         <AdminDashboard
           adminLoggedIn={adminLoggedIn}
           setAdminLoggedIn={setAdminLoggedIn}
-          setView={setView}
+          setView={navigateView}
         />
       )}
     </>
