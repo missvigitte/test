@@ -13923,6 +13923,14 @@ body {
   background: var(--admin-wine);
 }
 
+.top-preview .top-preview-note {
+  margin: 0;
+  padding: 18px 0;
+  color: #735f68;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
 @media (max-width: 1180px) {
   .admin-workbench {
     grid-template-columns: 1fr;

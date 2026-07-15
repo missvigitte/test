@@ -1,3 +1,12 @@
+import {
+  aiQuestions,
+  calculateAi,
+  calculateBusiness,
+  commercialQuestions,
+  creditScore,
+  isAssessmentComplete,
+} from "./assessment.js";
+
 const DEFAULT_ADMIN_PASSWORD = "opc2026";
 const ADMIN_STATUSES = new Set(["待跟进", "待分配", "已联系", "已转化", "已归档"]);
 const ADMIN_OWNERS = new Set(["未分配", "Mia", "Nora", "Luna", "Yvonne"]);
@@ -21,11 +30,6 @@ async function readJson(request) {
 
 function cleanText(value, max = 120) {
   return String(value ?? "").trim().slice(0, max);
-}
-
-function cleanNumber(value) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function stringifyJson(value) {
@@ -54,6 +58,18 @@ function isAdminRequest(request, env) {
 
 function normalizeRecord(body) {
   const record = body.record || body;
+  const businessAnswers = body.businessAnswers ?? record.businessAnswers ?? [];
+  const aiAnswers = body.aiAnswers ?? record.aiAnswers ?? [];
+  if (!isAssessmentComplete(businessAnswers, commercialQuestions)) {
+    throw new Error(`商业测评必须完整提交${commercialQuestions.length}题。`);
+  }
+  if (!isAssessmentComplete(aiAnswers, aiQuestions)) {
+    throw new Error(`AI工具测评必须完整提交${aiQuestions.length}题。`);
+  }
+
+  const businessResult = calculateBusiness(businessAnswers);
+  const aiResult = calculateAi(aiAnswers);
+  const primaryCategory = businessResult.recommendedCategories[0];
   const now = new Date().toISOString();
   const id = cleanText(record.id, 80) || `OPC-${Date.now().toString(36).toUpperCase()}`;
   const name = cleanText(record.name, 40);
@@ -68,22 +84,22 @@ function normalizeRecord(body) {
     phone,
     createdAt: cleanText(record.createdAt, 40) || now,
     updatedAt: now,
-    level: cleanText(record.level, 12),
-    levelName: cleanText(record.levelName, 40),
-    credit: cleanNumber(record.credit),
-    businessScore: cleanNumber(record.businessScore),
-    aiScore: cleanNumber(record.aiScore),
-    category: cleanText(record.category, 80),
-    match: cleanNumber(record.match),
-    aiWeakness: cleanText(record.aiWeakness, 40),
+    level: businessResult.level.level,
+    levelName: businessResult.level.name,
+    credit: creditScore(businessResult),
+    businessScore: businessResult.totalScore,
+    aiScore: aiResult.total,
+    category: primaryCategory.name,
+    match: primaryCategory.match,
+    aiWeakness: aiResult.weakest,
     status: ADMIN_STATUSES.has(record.status) ? record.status : "待跟进",
     owner: ADMIN_OWNERS.has(record.owner) ? record.owner : "未分配",
     source: cleanText(record.source, 80) || "完整OPC测评",
-    note: cleanText(record.note, 300),
-    businessResult: body.businessResult ?? record.businessResult ?? null,
-    aiResult: body.aiResult ?? record.aiResult ?? null,
-    businessAnswers: body.businessAnswers ?? record.businessAnswers ?? [],
-    aiAnswers: body.aiAnswers ?? record.aiAnswers ?? [],
+    note: cleanText(record.note, 300) || `主推${primaryCategory.short}，优先补${aiResult.weakest}。`,
+    businessResult,
+    aiResult,
+    businessAnswers,
+    aiAnswers,
   };
 }
 

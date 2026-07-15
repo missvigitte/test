@@ -25,6 +25,12 @@ import dustyBlushPaper from "./assets/dusty-blush-paper.jpg";
 import fruitWineWave from "./assets/fruit-wine-wave.webp";
 import oxbloodVelvet from "./assets/oxblood-velvet.jpg";
 import tzhSignatureFlow from "./assets/tzh-signature-flow-v2.webp";
+import {
+  calculateAi as calculateAiCore,
+  calculateBusiness as calculateBusinessCore,
+  creditScore as calculateCreditScore,
+  isAssessmentComplete,
+} from "./assessment.js";
 
 const dimensions = [
   "内容能力",
@@ -57,7 +63,7 @@ const categoryWeights = [
 ];
 
 const commercialQuestions = [
-  { dim: "内容能力", q: "你平时最喜欢哪种表达方式？", options: ["写文字，能把想法讲清楚", "拍图片或做图，擅长视觉表达", "拍视频或剪辑，愿意出镜/表达", "不太擅长表达，更多是直接沟通"] },
+  { dim: "内容能力", q: "当你需要公开表达一个观点时，你通常能做到什么程度？", options: ["能根据受众选择文字、图片或视频，并持续输出", "有一种较稳定的表达方式，基本能讲清楚", "偶尔能表达，但需要较多准备或协助", "主要依赖一对一沟通，很少公开表达"] },
   { dim: "内容能力", q: "你曾经创造过被很多人看到的内容吗？", options: ["有，且多次获得超出预期的互动", "有一两次，感觉还不错", "没有特别印象，可能没有", "从来没认真做过内容"] },
   { dim: "内容能力", q: "看到一个好的产品或服务，你会？", options: ["主动分享，还会附带使用感受", "私发给可能需要的朋友", "自己默默用，不主动分享", "没什么特别感觉"] },
   { dim: "商业判断力", q: "看到一个新品类产品，你的第一反应是？", options: ["这个东西卖给谁，为什么有人会买", "这个东西有意思、好看或好用", "刷过去，没什么特别感觉", "不知道这是什么"] },
@@ -89,18 +95,6 @@ const aiQuestions = [
   { area: "数据复盘", q: "如果要比较三个品类机会，你会怎么做？", options: ["用AI+数据工具做表格和结论", "手动搜资料再判断", "问朋友或看谁做得多", "不知道怎么比较"] },
   { area: "工具成本", q: "面对一个新AI工具，你会先看什么？", options: ["它能替代哪个岗位或流程", "它是否好上手、是否便宜", "别人有没有推荐", "名字看起来熟不熟"] },
   { area: "工具成本", q: "你现在最需要AI替你解决什么？", options: ["把重复工作变成流程", "提高内容产出速度", "帮我写文案和话术", "还不清楚自己的需求"] },
-];
-
-const levelMap = [
-  { min: 0, max: 9, level: "L1", name: "机会发现者", desc: "你正在探索AI商业世界。最好的开始，就是现在。" },
-  { min: 10, max: 24, level: "L2", name: "AI实战新手", desc: "你已经有了AI基础。现在是时候用它来赚钱了。" },
-  { min: 25, max: 34, level: "L3", name: "品类分析师", desc: "你已经能看到商业机会了。下一步不是学更多，是选对一个品类。" },
-  { min: 35, max: 44, level: "L4", name: "项目执行者", desc: "你的能力组合已经可以启动商业项目。推荐品类已就绪。" },
-  { min: 45, max: 59, level: "L5", name: "应用构建者", desc: "你有完整的商业执行能力。现在是聚焦和放大的时候。" },
-  { min: 60, max: 74, level: "L6", name: "商业闭环者", desc: "你的商业潜力已经验证。下一步是选择，不是能力。" },
-  { min: 75, max: 84, level: "L7", name: "品类领导者", desc: "你在某个品类已经建立了竞争优势和系统化的收入。" },
-  { min: 85, max: 94, level: "L8", name: "生态构建者", desc: "你已经从OPC进化到可复制的系统，可以赋能更多人。" },
-  { min: 95, max: 100, level: "L9", name: "商业导师", desc: "你的经验和系统已经成为他人成功的路径。" },
 ];
 
 const dimensionMeta = {
@@ -366,76 +360,16 @@ async function deleteAdminRecord(id) {
   });
 }
 
-function scoreFromOption(optionIndex) {
-  return [4, 3, 2, 1][optionIndex] ?? 1;
-}
-
 function fallbackAnswers(questions) {
   return questions.map((_, index) => index % 4 === 0 ? 0 : index % 3 === 0 ? 2 : 1);
 }
 
-function clampScore(value, min = 35, max = 96) {
-  return Math.min(max, Math.max(min, value));
-}
-
 function calculateBusiness(answers) {
-  const raw = Object.fromEntries(dimensions.map((dimension) => [dimension, 0]));
-  commercialQuestions.forEach((question, index) => {
-    const answer = answers[index] ?? fallbackAnswers(commercialQuestions)[index];
-    raw[question.dim] += scoreFromOption(answer);
-  });
-
-  const percentScores = {};
-  let totalScore = 0;
-  dimensions.forEach((dimension) => {
-    const meta = dimensionMeta[dimension];
-    const percent = Math.round((raw[dimension] / meta.full) * 100);
-    percentScores[dimension] = percent;
-    totalScore += percent * meta.weight;
-  });
-
-  const roundedScore = Math.round(totalScore);
-  const level = levelMap.find((item) => roundedScore >= item.min && roundedScore <= item.max) ?? levelMap[0];
-  const strongestDim = dimensions.reduce((top, dim) => percentScores[dim] > percentScores[top] ? dim : top, dimensions[0]);
-  const weakestDim = dimensions.reduce((low, dim) => percentScores[dim] < percentScores[low] ? dim : low, dimensions[0]);
-  const categoryMatches = categoryWeights
-    .map((category) => {
-      const weighted = dimensions.reduce((sum, dim, index) => sum + (percentScores[dim] / 100) * category.weights[index], 0);
-      const total = category.weights.reduce((sum, value) => sum + value, 0);
-      const baseMatch = (weighted / total) * 100;
-      const averageRequirement = total / dimensions.length;
-      const affinity = dimensions.reduce((sum, dim, index) => {
-        const scoreDelta = percentScores[dim] - 70;
-        const requirementDelta = category.weights[index] - averageRequirement;
-        return sum + scoreDelta * requirementDelta;
-      }, 0) / 28;
-      const gapRisk = dimensions.reduce((sum, dim, index) => {
-        const required = category.weights[index];
-        const score = percentScores[dim];
-        return required >= 75 && score < 68 ? sum + (68 - score) * 0.16 : sum;
-      }, 0);
-      return { ...category, match: clampScore(Math.round(baseMatch + affinity - gapRisk)) };
-    })
-    .sort((a, b) => b.match - a.match);
-  const recommendedCategories = categoryMatches.slice(0, 3);
-
-  return { raw, percentScores, totalScore: roundedScore, level, strongestDim, weakestDim, recommendedCategories, categoryMatches };
+  return calculateBusinessCore(answers);
 }
 
 function calculateAi(answers) {
-  const areas = ["提示词库", "内容生产", "自动化流程", "私域工具", "数据复盘", "工具成本"];
-  const raw = Object.fromEntries(areas.map((area) => [area, 0]));
-  const counts = Object.fromEntries(areas.map((area) => [area, 0]));
-  aiQuestions.forEach((question, index) => {
-    const answer = answers[index] ?? fallbackAnswers(aiQuestions)[index];
-    raw[question.area] += scoreFromOption(answer);
-    counts[question.area] += 1;
-  });
-  const percent = Object.fromEntries(areas.map((area) => [area, Math.round((raw[area] / (counts[area] * 4)) * 100)]));
-  const weakest = areas.reduce((low, area) => percent[area] < percent[low] ? area : low, areas[0]);
-  const strongest = areas.reduce((top, area) => percent[area] > percent[top] ? area : top, areas[0]);
-  const total = Math.round(areas.reduce((sum, area) => sum + percent[area], 0) / areas.length);
-  return { areas, percent, weakest, strongest, total };
+  return calculateAiCore(answers);
 }
 
 const dimensionInsightCopy = {
@@ -1173,6 +1107,7 @@ function BusinessAssessment({ answers, setAnswers, setView, businessResult }) {
   }
 
   function nextQuestion() {
+    if (selected === undefined) return;
     if (index < commercialQuestions.length - 1) {
       setIndex(index + 1);
     } else {
@@ -1236,7 +1171,7 @@ function BusinessAssessment({ answers, setAnswers, setView, businessResult }) {
             <button className="ghost-btn" type="button" onClick={() => setIndex(Math.max(0, index - 1))} disabled={index === 0}>
               上一题
             </button>
-            <button className="primary-btn compact" type="button" onClick={nextQuestion}>
+            <button className="primary-btn compact" type="button" onClick={nextQuestion} disabled={selected === undefined}>
               {index === commercialQuestions.length - 1 ? "进入AI工具测评" : "下一题"} <ArrowRight size={17} />
             </button>
           </div>
@@ -1247,13 +1182,15 @@ function BusinessAssessment({ answers, setAnswers, setView, businessResult }) {
           <h2>提交后生成Top3推荐品类</h2>
           <CategoryChips />
           <div className="top-preview">
-            {interim.recommendedCategories.map((category, idx) => (
+            {interim.complete ? interim.recommendedCategories.map((category, idx) => (
               <div key={category.name}>
                 <span>0{idx + 1}</span>
                 <strong>{category.name}</strong>
                 <small>{category.match}% · {category.income}</small>
               </div>
-            ))}
+            )) : (
+              <p className="top-preview-note">已完成 {interim.answeredCount} / {commercialQuestions.length} 题，完整作答后计算赛道匹配。</p>
+            )}
           </div>
         </aside>
       </section>
@@ -1278,6 +1215,7 @@ function AiAssessment({ aiAnswers, setAiAnswers, setView, businessResult, aiResu
   }
 
   function nextQuestion() {
+    if (selected === undefined) return;
     if (index < aiQuestions.length - 1) {
       setIndex(index + 1);
     } else {
@@ -1334,7 +1272,7 @@ function AiAssessment({ aiAnswers, setAiAnswers, setView, businessResult, aiResu
             <button className="ghost-btn" type="button" onClick={() => setIndex(Math.max(0, index - 1))} disabled={index === 0}>
               上一题
             </button>
-            <button className="primary-btn compact" type="button" onClick={nextQuestion}>
+            <button className="primary-btn compact" type="button" onClick={nextQuestion} disabled={selected === undefined}>
               {index === aiQuestions.length - 1 ? "生成OPC定位卡" : "下一题"} <ArrowRight size={17} />
             </button>
           </div>
@@ -2416,7 +2354,7 @@ function InsightCard({ title, text }) {
 }
 
 function creditScore(business) {
-  return Math.min(960, Math.max(520, Math.round(520 + business.totalScore * 4)));
+  return calculateCreditScore(business);
 }
 
 function RadarChart({ scores, compact = false, mobile = false }) {
@@ -2512,10 +2450,10 @@ export function App() {
   });
 
   const businessResult = useMemo(() => (
-    answers.length ? calculateBusiness(answers) : null
+    isAssessmentComplete(answers, commercialQuestions) ? calculateBusiness(answers) : null
   ), [answers]);
   const aiResult = useMemo(() => (
-    aiAnswers.length ? calculateAi(aiAnswers) : null
+    isAssessmentComplete(aiAnswers, aiQuestions) ? calculateAi(aiAnswers) : null
   ), [aiAnswers]);
 
   useEffect(() => {
@@ -2610,7 +2548,7 @@ export function App() {
         setView("lead");
         return;
       }
-      if (nextView === "ai" && !businessResult) {
+      if (nextView === "ai" && !isAssessmentComplete(answers, commercialQuestions)) {
         setView("business");
         return;
       }
