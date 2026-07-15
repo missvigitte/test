@@ -13,7 +13,7 @@ const ADMIN_OWNERS = new Set(["未分配", "Mia", "Nora", "Luna", "Yvonne"]);
 const ASSESSMENT_TYPES = new Set(["business", "ai", "opc"]);
 const SESSION_COOKIE = "opc_user_session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
-const PASSWORD_ITERATIONS = 120000;
+const PASSWORD_ITERATIONS = 100000;
 
 function json(data, status = 200, extraHeaders = {}) {
   return Response.json(data, {
@@ -392,11 +392,19 @@ async function handleApi(request, env, url) {
   if (request.method === "OPTIONS") return json({ ok: true });
 
   if (url.pathname === "/api/auth/register" && request.method === "POST") {
-    return registerUser(request, env);
+    try {
+      return await registerUser(request, env);
+    } catch {
+      return json({ ok: false, error: "注册服务暂时不可用，请稍后重试。" }, 500);
+    }
   }
 
   if (url.pathname === "/api/auth/login" && request.method === "POST") {
-    return loginUser(request, env);
+    try {
+      return await loginUser(request, env);
+    } catch {
+      return json({ ok: false, error: "登录服务暂时不可用，请稍后重试。" }, 500);
+    }
   }
 
   if (url.pathname === "/api/auth/logout" && request.method === "POST") {
