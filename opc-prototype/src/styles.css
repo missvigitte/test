@@ -14822,6 +14822,7 @@ body {
 
 .admin-dashboard-shell {
   gap: 0;
+  padding: 12px 32px 64px;
 }
 
 .admin-dashboard-shell > section {
@@ -14841,8 +14842,8 @@ body {
 .admin-dashboard-head {
   position: relative;
   align-items: flex-end;
-  min-height: 230px;
-  padding: clamp(34px, 4vw, 58px) clamp(28px, 4vw, 62px);
+  min-height: 195px;
+  padding: 32px 48px;
   overflow: hidden;
   border: 0;
   color: #fffaf2;
@@ -14940,8 +14941,8 @@ body {
 
 .admin-stat-card {
   position: relative;
-  min-height: 118px;
-  padding: 24px clamp(18px, 2vw, 30px);
+  min-height: 100px;
+  padding: 20px clamp(18px, 2vw, 30px);
   border: 0;
   border-right: 1px solid rgba(77, 16, 38, 0.13);
   background: transparent;
@@ -15713,5 +15714,654 @@ body {
     background:
       linear-gradient(180deg, rgba(32, 4, 13, 0.88), rgba(57, 10, 27, 0.76)),
       var(--admin-wave-bg) center / cover;
+  }
+}
+
+/* Admin metric drill-down */
+.admin-stat-card {
+  width: 100%;
+  appearance: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-stat-card::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: transparent;
+  content: "";
+  transition: background-color 180ms ease;
+}
+
+.admin-stat-card.active {
+  color: #fffaf2;
+  background: var(--admin-wine);
+}
+
+.admin-stat-card.active::before {
+  background: var(--admin-gold-soft);
+}
+
+.admin-stat-card.active > span,
+.admin-stat-card.active strong,
+.admin-stat-card.active small {
+  color: #fffaf2;
+}
+
+.admin-stat-card:focus-visible {
+  z-index: 2;
+  outline: 2px solid #a47d48;
+  outline-offset: 3px;
+}
+
+.admin-stat-card.active:focus-visible {
+  outline-width: 1px;
+  outline-offset: -4px;
+}
+
+.admin-intent-view {
+  margin-top: 16px;
+}
+
+.admin-intent-summary {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.25fr) repeat(3, minmax(170px, 1fr)) minmax(170px, 0.85fr);
+  align-items: center;
+  min-height: 118px;
+  border: 1px solid rgba(77, 16, 38, 0.15);
+  background: rgba(252, 249, 243, 0.94);
+  box-shadow: 0 16px 38px rgba(49, 20, 30, 0.045);
+}
+
+.admin-intent-summary-heading,
+.admin-intent-criterion,
+.admin-intent-summary > p {
+  min-width: 0;
+  padding: 24px clamp(18px, 2vw, 30px);
+}
+
+.admin-intent-summary-heading span,
+.admin-intent-heading span,
+.admin-intent-focus-title span {
+  display: block;
+  color: var(--admin-gold);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.admin-intent-summary h2,
+.admin-intent-heading h2,
+.admin-intent-focus h2 {
+  margin: 7px 0 0;
+  color: var(--admin-ink);
+  font-family: var(--opc-font-title);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.admin-intent-summary h2 {
+  font-size: 23px;
+}
+
+.admin-intent-criterion {
+  border-left: 1px solid rgba(77, 16, 38, 0.12);
+  text-align: center;
+}
+
+.admin-intent-criterion strong {
+  display: block;
+  color: var(--admin-wine);
+  font-family: var(--opc-font-number);
+  font-size: 34px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.admin-intent-criterion span {
+  display: block;
+  margin-top: 10px;
+  color: var(--admin-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.admin-intent-summary > p {
+  margin: 0;
+  border-left: 1px solid rgba(77, 16, 38, 0.12);
+  color: #8a777d;
+  font-size: 11px;
+  line-height: 1.7;
+  text-align: right;
+}
+
+.admin-intent-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.36fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.admin-intent-records,
+.admin-intent-focus {
+  border: 1px solid rgba(77, 16, 38, 0.14);
+  background: rgba(252, 249, 243, 0.96);
+  box-shadow: 0 20px 50px rgba(49, 20, 30, 0.055);
+}
+
+.admin-intent-records {
+  min-width: 0;
+  padding: 20px;
+}
+
+.admin-intent-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(77, 16, 38, 0.13);
+}
+
+.admin-intent-heading h2 {
+  font-size: 27px;
+}
+
+.admin-intent-heading p {
+  margin: 0;
+  color: var(--admin-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-intent-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto minmax(138px, 0.42fr) auto;
+  gap: 10px;
+  align-items: stretch;
+  margin: 16px 0 14px;
+}
+
+.admin-intent-toolbar .admin-search input,
+.admin-intent-owner-filter select,
+.admin-export-btn {
+  min-height: 44px;
+  border: 1px solid rgba(77, 16, 38, 0.18);
+  border-radius: 1px;
+  color: var(--admin-ink);
+  background: #fffdf8;
+}
+
+.admin-intent-owner-filter select {
+  width: 100%;
+  padding: 0 34px 0 12px;
+  font: inherit;
+  font-size: 12px;
+}
+
+.admin-intent-segments {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(58px, auto));
+  border: 1px solid rgba(77, 16, 38, 0.18);
+  background: #fffdf8;
+}
+
+.admin-intent-segments button {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 0;
+  border-right: 1px solid rgba(77, 16, 38, 0.13);
+  color: var(--admin-muted);
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.admin-intent-segments button:last-child {
+  border-right: 0;
+}
+
+.admin-intent-segments button.active {
+  color: #fffaf2;
+  background: var(--admin-wine);
+}
+
+.admin-intent-segments button:focus-visible,
+.admin-intent-owner-filter select:focus-visible,
+.admin-export-btn:focus-visible,
+.admin-intent-focus button:focus-visible {
+  outline: 2px solid #a47d48;
+  outline-offset: 2px;
+}
+
+.admin-export-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 78px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.admin-intent-table-wrap {
+  overflow: auto;
+  border: 1px solid rgba(77, 16, 38, 0.13);
+  background: #fffdf8;
+}
+
+.admin-intent-table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  color: var(--admin-ink);
+  font-size: 12px;
+}
+
+.admin-intent-table th:nth-child(1) { width: 13%; }
+.admin-intent-table th:nth-child(2) { width: 14%; }
+.admin-intent-table th:nth-child(3) { width: 21%; }
+.admin-intent-table th:nth-child(4) { width: 13%; }
+.admin-intent-table th:nth-child(5) { width: 13%; }
+.admin-intent-table th:nth-child(6) { width: 15%; }
+.admin-intent-table th:nth-child(7) { width: 11%; }
+
+.admin-intent-table th,
+.admin-intent-table td {
+  padding: 9px 9px;
+  border-bottom: 1px solid rgba(77, 16, 38, 0.1);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.admin-intent-table th {
+  color: #765b36;
+  background: #f3eadf;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.admin-intent-table tbody tr:hover td {
+  background: #faf3e9;
+}
+
+.admin-intent-table td > strong,
+.admin-intent-table td > span {
+  display: block;
+}
+
+.admin-intent-table td > strong {
+  color: var(--admin-ink);
+  font-size: 12px;
+}
+
+.admin-intent-table td > span,
+.admin-intent-table td > strong + span {
+  margin-top: 4px;
+  color: #7b6970;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-intent-table select {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 28px 0 8px;
+  border: 1px solid rgba(77, 16, 38, 0.17);
+  border-radius: 1px;
+  color: var(--admin-ink);
+  background: #fffdf8;
+  font: inherit;
+  font-size: 11px;
+}
+
+.admin-intent-table .admin-row-actions button {
+  width: 36px;
+  height: 36px;
+}
+
+.admin-intent-signals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.admin-intent-signals span {
+  position: relative;
+  color: #5c3442;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.admin-intent-signals span:not(:last-child)::after {
+  position: absolute;
+  right: -7px;
+  color: #c5a87b;
+  content: "/";
+}
+
+.admin-intent-focus {
+  position: relative;
+  min-width: 0;
+  padding: 0 20px 20px;
+  overflow: hidden;
+}
+
+.admin-intent-focus::before {
+  display: block;
+  height: 6px;
+  margin: 0 -20px;
+  background: var(--admin-wine);
+  content: "";
+}
+
+.admin-intent-focus-title {
+  padding: 20px 0 16px;
+  border-bottom: 1px solid rgba(77, 16, 38, 0.13);
+}
+
+.admin-intent-focus h2 {
+  font-size: 24px;
+}
+
+.admin-intent-focus-list article {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 12px;
+  padding: 18px 0;
+  border-bottom: 1px solid rgba(77, 16, 38, 0.12);
+}
+
+.admin-intent-focus-list article > em {
+  color: var(--admin-wine);
+  font-family: var(--opc-font-number);
+  font-size: 27px;
+  font-style: normal;
+  line-height: 1;
+}
+
+.admin-intent-focus-name {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.admin-intent-focus-name strong {
+  color: var(--admin-ink);
+  font-size: 14px;
+}
+
+.admin-intent-focus-name span {
+  padding: 3px 6px;
+  border: 1px solid rgba(156, 120, 71, 0.35);
+  color: #84663d;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.admin-intent-focus-list p,
+.admin-intent-focus-list small {
+  display: block;
+  margin: 7px 0 0;
+  color: var(--admin-muted);
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.admin-intent-focus-list small {
+  color: #8a777d;
+}
+
+.admin-intent-focus-list button,
+.admin-intent-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 34px;
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  color: var(--admin-wine);
+  background: transparent;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-intent-all-btn {
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 14px;
+  border: 1px solid rgba(77, 16, 38, 0.2);
+  font-size: 11px;
+}
+
+.admin-intent-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.admin-intent-pagination button {
+  min-width: 72px;
+  min-height: 38px;
+  border: 1px solid rgba(77, 16, 38, 0.18);
+  border-radius: 1px;
+  color: var(--admin-wine);
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.admin-intent-pagination button:disabled {
+  color: #aa9a9f;
+  cursor: default;
+  opacity: 0.55;
+}
+
+.admin-intent-pagination span {
+  color: var(--admin-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1180px) {
+  .admin-intent-summary {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .admin-intent-summary-heading {
+    grid-column: 1 / -1;
+    padding-bottom: 10px;
+  }
+
+  .admin-intent-criterion:first-of-type {
+    border-left: 0;
+  }
+
+  .admin-intent-summary > p {
+    grid-column: 1 / -1;
+    padding-top: 0;
+    border-left: 0;
+    text-align: center;
+  }
+
+  .admin-intent-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-intent-toolbar {
+    grid-template-columns: minmax(220px, 1fr) auto minmax(138px, 0.45fr) auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-stat-card.active {
+    background: var(--admin-wine);
+  }
+
+  .admin-intent-view {
+    margin-top: 12px;
+  }
+
+  .admin-intent-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-intent-summary-heading,
+  .admin-intent-summary > p {
+    grid-column: 1 / -1;
+  }
+
+  .admin-intent-summary-heading,
+  .admin-intent-criterion,
+  .admin-intent-summary > p {
+    padding: 16px;
+  }
+
+  .admin-intent-criterion {
+    border-top: 1px solid rgba(77, 16, 38, 0.12);
+  }
+
+  .admin-intent-criterion:nth-of-type(2) {
+    border-left: 0;
+  }
+
+  .admin-intent-criterion:last-of-type {
+    grid-column: 1 / -1;
+    border-left: 0;
+  }
+
+  .admin-intent-criterion strong {
+    font-size: 30px;
+  }
+
+  .admin-intent-criterion span {
+    white-space: normal;
+  }
+
+  .admin-intent-records {
+    padding: 18px 14px;
+  }
+
+  .admin-intent-heading {
+    align-items: start;
+  }
+
+  .admin-intent-heading h2 {
+    font-size: 24px;
+  }
+
+  .admin-intent-heading p {
+    padding-top: 16px;
+  }
+
+  .admin-intent-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-intent-segments {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .admin-intent-segments button {
+    min-width: 0;
+    padding: 0 5px;
+  }
+
+  .admin-export-btn {
+    width: 100%;
+  }
+
+  .admin-intent-table-wrap {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .admin-intent-table {
+    min-width: 0;
+  }
+
+  .admin-intent-table thead {
+    display: none;
+  }
+
+  .admin-intent-table,
+  .admin-intent-table tbody,
+  .admin-intent-table tr,
+  .admin-intent-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .admin-intent-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .admin-intent-table tr {
+    border: 1px solid rgba(77, 16, 38, 0.15);
+    background: #fffdf8;
+  }
+
+  .admin-intent-table td {
+    display: grid;
+    grid-template-columns: 82px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .admin-intent-table td::before {
+    color: #7a623f;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    content: attr(data-label);
+  }
+
+  .admin-intent-table select {
+    min-height: 44px;
+  }
+
+  .admin-intent-table .admin-row-actions button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .admin-intent-focus {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .admin-intent-focus::before {
+    margin-right: -16px;
+    margin-left: -16px;
+  }
+
+  .admin-intent-pagination {
+    justify-content: center;
+  }
+
+  .admin-intent-pagination button {
+    min-width: 92px;
+    min-height: 44px;
   }
 }

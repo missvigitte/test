@@ -14,6 +14,7 @@ import {
   MagnifyingGlass,
   List,
   LockKey,
+  PencilSimple,
   Phone,
   ShareNetwork,
   ShieldCheck,
@@ -258,6 +259,33 @@ const sampleAdminRecords = [
 
 const adminStatuses = ["待跟进", "待分配", "已联系", "已转化", "已归档"];
 const adminOwners = ["未分配", "Mia", "Nora", "Luna", "Yvonne"];
+const adminMetricFilters = {
+  all: { label: "用户记录" },
+  intent: { label: "高意向用户" },
+  pending: { label: "待处理" },
+  converted: { label: "已转化" },
+};
+
+function highIntentSignals(record) {
+  const signals = [];
+  if (Number(record.credit) >= 800) signals.push({ key: "credit", label: `她信分 ${record.credit}` });
+  if (["L7", "L8", "L9"].includes(record.level)) signals.push({ key: "level", label: `OPC ${record.level}` });
+  if (Number(record.match) >= 80) signals.push({ key: "match", label: `Top1 ${record.match}%` });
+  return signals;
+}
+
+function highIntentPriority(record) {
+  const levelValue = Number.parseInt(String(record.level || "").replace("L", ""), 10) || 0;
+  return highIntentSignals(record).length * 1000
+    + (Number(record.credit) || 0)
+    + levelValue * 10
+    + (Number(record.match) || 0);
+}
+
+function formatAdminRecordTime(value) {
+  if (!value) return "—";
+  return String(value).replace("T", " ").replace("Z", "").slice(0, 16);
+}
 
 function readAdminRecords() {
   if (typeof window === "undefined") return sampleAdminRecords;
@@ -2413,6 +2441,9 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
   const [records, setRecords] = useState(() => readAdminRecords());
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("全部");
+  const [ownerFilter, setOwnerFilter] = useState("全部顾问");
+  const [activeMetric, setActiveMetric] = useState("all");
+  const [intentPage, setIntentPage] = useState(1);
   const [selectedId, setSelectedId] = useState(() => readAdminRecords()[0]?.id ?? "");
   const [loading, setLoading] = useState(false);
   const [remoteError, setRemoteError] = useState("");
@@ -2448,7 +2479,12 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
   const filteredRecords = useMemo(() => {
     const keyword = query.trim().toLowerCase();
     return records.filter((record) => {
+      const metricMatch = activeMetric === "all"
+        || (activeMetric === "intent" && highIntentSignals(record).length > 0)
+        || (activeMetric === "pending" && ["待跟进", "待分配"].includes(record.status))
+        || (activeMetric === "converted" && record.status === "已转化");
       const statusMatch = statusFilter === "全部" || record.status === statusFilter;
+      const ownerMatch = ownerFilter === "全部顾问" || record.owner === ownerFilter;
       const keywordMatch = !keyword || [
         record.name,
         record.phone,
@@ -2458,11 +2494,16 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
         record.aiWeakness,
         record.owner,
       ].some((value) => String(value).toLowerCase().includes(keyword));
-      return statusMatch && keywordMatch;
+      return metricMatch && statusMatch && ownerMatch && keywordMatch;
     });
-  }, [query, records, statusFilter]);
+  }, [activeMetric, ownerFilter, query, records, statusFilter]);
 
-  const selectedRecord = records.find((record) => record.id === selectedId) ?? filteredRecords[0] ?? records[0];
+  const selectedRecord = filteredRecords.find((record) => record.id === selectedId) ?? filteredRecords[0] ?? records[0];
+
+  useEffect(() => {
+    setIntentPage(1);
+  }, [activeMetric, ownerFilter, query, statusFilter]);
+
   const selectedBusiness = selectedRecord?.businessResult ?? null;
   const selectedAi = selectedRecord?.aiResult ?? null;
   const selectedDimensions = selectedBusiness ? buildDimensionReport(selectedBusiness) : [];
@@ -2472,8 +2513,59 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
     : [];
   const selectedRoute = selectedBusiness && selectedAi ? buildBespokeRoute(selectedBusiness, selectedAi) : [];
   const pendingCount = records.filter((record) => ["待跟进", "待分配"].includes(record.status)).length;
-  const highIntentCount = records.filter((record) => record.credit >= 800 || ["L7", "L8", "L9"].includes(record.level)).length;
+  const highIntentRecords = records.filter((record) => highIntentSignals(record).length > 0);
+  const highIntentCount = highIntentRecords.length;
+  const highIntentCriteriaCounts = {
+    credit: highIntentRecords.filter((record) => Number(record.credit) >= 800).length,
+    level: highIntentRecords.filter((record) => ["L7", "L8", "L9"].includes(record.level)).length,
+    match: highIntentRecords.filter((record) => Number(record.match) >= 80).length,
+  };
+  const focusRecords = [...highIntentRecords]
+    .filter((record) => !["已转化", "已归档"].includes(record.status))
+    .sort((left, right) => highIntentPriority(right) - highIntentPriority(left))
+    .slice(0, 3);
+  const intentPageCount = Math.max(1, Math.ceil(filteredRecords.length / 6));
+  const effectiveIntentPage = Math.min(intentPage, intentPageCount);
+  const visibleIntentRecords = filteredRecords.slice((effectiveIntentPage - 1) * 6, effectiveIntentPage * 6);
   const convertedCount = records.filter((record) => record.status === "已转化").length;
+
+  function selectMetric(metric) {
+    setActiveMetric(metric);
+    setStatusFilter("全部");
+    setOwnerFilter("全部顾问");
+    setQuery("");
+  }
+
+  function openRecordDetail(id) {
+    setSelectedId(id);
+    setActiveMetric("all");
+    setStatusFilter("全部");
+    setOwnerFilter("全部顾问");
+  }
+
+  function exportVisibleRecords() {
+    const headings = ["姓名", "手机号", "她信分", "OPC等级", "Top1匹配度", "命中依据", "状态", "顾问", "最近测评"];
+    const rows = filteredRecords.map((record) => [
+      record.name,
+      record.phone,
+      record.credit ?? "",
+      record.level || "",
+      record.match ?? "",
+      highIntentSignals(record).map((item) => item.label).join(" / "),
+      record.status,
+      record.owner,
+      formatAdminRecordTime(record.createdAt),
+    ]);
+    const csv = [headings, ...rows]
+      .map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(","))
+      .join("\n");
+    const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `她智汇-高意向用户-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
 
   function updateRecordLocal(id, patch) {
     setRecords((current) => current.map((record) => (
@@ -2557,20 +2649,191 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
       </section>
 
       <section className="admin-stat-grid" aria-label="后台关键指标">
-        <AdminStat icon={UsersThree} label="用户记录" value={records.length} />
-        <AdminStat icon={ChartLineUp} label="高意向用户" value={highIntentCount} />
-        <AdminStat icon={FunnelSimple} label="待处理" value={pendingCount} />
-        <AdminStat icon={CheckCircle} label="已转化" value={convertedCount} />
+        <AdminStat active={activeMetric === "all"} icon={UsersThree} label="用户记录" onClick={() => selectMetric("all")} value={records.length} />
+        <AdminStat active={activeMetric === "intent"} icon={ChartLineUp} label="高意向用户" onClick={() => selectMetric("intent")} value={highIntentCount} />
+        <AdminStat active={activeMetric === "pending"} icon={FunnelSimple} label="待处理" onClick={() => selectMetric("pending")} value={pendingCount} />
+        <AdminStat active={activeMetric === "converted"} icon={CheckCircle} label="已转化" onClick={() => selectMetric("converted")} value={convertedCount} />
       </section>
 
-      <section className="admin-workbench">
+      {activeMetric === "intent" && (
+        <section className="admin-intent-view" aria-labelledby="intent-view-title">
+          <div className="admin-intent-summary">
+            <div className="admin-intent-summary-heading">
+              <span>INTENT PROFILE</span>
+              <h2 id="intent-view-title">高意向用户画像</h2>
+            </div>
+            <div className="admin-intent-criterion">
+              <strong>{highIntentCriteriaCounts.credit}</strong>
+              <span>她信分 ≥ 800</span>
+            </div>
+            <div className="admin-intent-criterion">
+              <strong>{highIntentCriteriaCounts.level}</strong>
+              <span>OPC等级 L7-L9</span>
+            </div>
+            <div className="admin-intent-criterion">
+              <strong>{highIntentCriteriaCounts.match}</strong>
+              <span>Top3匹配度 ≥ 80%</span>
+            </div>
+            <p>满足任一条件 · 实时更新</p>
+          </div>
+
+          <div className="admin-intent-layout">
+            <div className="admin-intent-records">
+              <div className="admin-intent-heading">
+                <div>
+                  <span>PRIORITY USERS</span>
+                  <h2>{highIntentCount}位高意向用户</h2>
+                </div>
+                <p>{filteredRecords.length} / {highIntentCount} 条记录</p>
+              </div>
+
+              <div className="admin-intent-toolbar">
+                <label className="admin-search">
+                  <MagnifyingGlass size={18} />
+                  <input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="搜索姓名、手机号、命中依据"
+                    aria-label="搜索高意向用户"
+                  />
+                </label>
+                <div className="admin-intent-segments" aria-label="按跟进状态筛选">
+                  {[
+                    { value: "全部", label: "全部" },
+                    { value: "待分配", label: "待分配" },
+                    { value: "待跟进", label: "待跟进" },
+                    { value: "已联系", label: "跟进中" },
+                  ].map((item) => (
+                    <button
+                      className={statusFilter === item.value ? "active" : ""}
+                      type="button"
+                      key={item.value}
+                      onClick={() => setStatusFilter(item.value)}
+                      aria-pressed={statusFilter === item.value}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+                <label className="admin-intent-owner-filter">
+                  <span className="sr-only">按顾问筛选</span>
+                  <select value={ownerFilter} onChange={(event) => setOwnerFilter(event.target.value)} aria-label="按顾问筛选">
+                    <option>全部顾问</option>
+                    {adminOwners.map((owner) => <option key={owner}>{owner}</option>)}
+                  </select>
+                </label>
+                <button className="admin-export-btn" type="button" onClick={exportVisibleRecords} title="导出当前名单">
+                  <DownloadSimple size={17} />
+                  <span>导出</span>
+                </button>
+              </div>
+
+              <div className="admin-intent-table-wrap">
+                <table className="admin-intent-table">
+                  <thead>
+                    <tr>
+                      <th>用户</th>
+                      <th>综合表现</th>
+                      <th>命中依据</th>
+                      <th>当前状态</th>
+                      <th>顾问</th>
+                      <th>最近测评</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleIntentRecords.map((record) => (
+                      <tr key={record.id}>
+                        <td data-label="用户">
+                          <strong>{record.name}</strong>
+                          <span>{record.phone}</span>
+                        </td>
+                        <td data-label="综合表现">
+                          <strong>{record.credit != null ? `她信分 ${record.credit}` : record.aiScore != null ? `AI ${record.aiScore}` : "—"}</strong>
+                          <span>{record.level ? `OPC ${record.level}` : assessmentMeta[record.assessmentType]?.shortTitle}</span>
+                        </td>
+                        <td data-label="命中依据">
+                          <div className="admin-intent-signals">
+                            {highIntentSignals(record).map((signal) => <span key={signal.key}>{signal.label}</span>)}
+                          </div>
+                        </td>
+                        <td data-label="当前状态">
+                          <select value={record.status} onChange={(event) => persistRecord(record.id, { status: event.target.value })} aria-label={`${record.name}状态`}>
+                            {adminStatuses.map((status) => <option key={status}>{status}</option>)}
+                          </select>
+                        </td>
+                        <td data-label="顾问">
+                          <select value={record.owner} onChange={(event) => persistRecord(record.id, { owner: event.target.value })} aria-label={`${record.name}顾问`}>
+                            {adminOwners.map((owner) => <option key={owner}>{owner}</option>)}
+                          </select>
+                        </td>
+                        <td data-label="最近测评"><span>{formatAdminRecordTime(record.createdAt)}</span></td>
+                        <td data-label="操作">
+                          <div className="admin-row-actions">
+                            <button type="button" onClick={() => openRecordDetail(record.id)} aria-label={`查看${record.name}完整档案`} title="查看完整档案">
+                              <Eye size={16} />
+                            </button>
+                            <button type="button" onClick={() => persistRecord(record.id, { status: "已联系" })} aria-label={`跟进${record.name}`} title="标记跟进中">
+                              <PencilSimple size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {!filteredRecords.length && <p className="admin-empty">没有符合当前条件的高意向用户。</p>}
+              </div>
+              {filteredRecords.length > 0 && (
+                <nav className="admin-intent-pagination" aria-label="高意向用户分页">
+                  <button type="button" onClick={() => setIntentPage((page) => Math.max(1, page - 1))} disabled={effectiveIntentPage === 1}>
+                    上一页
+                  </button>
+                  <span>{effectiveIntentPage} / {intentPageCount}</span>
+                  <button type="button" onClick={() => setIntentPage((page) => Math.min(intentPageCount, page + 1))} disabled={effectiveIntentPage === intentPageCount}>
+                    下一页
+                  </button>
+                </nav>
+              )}
+            </div>
+
+            <aside className="admin-intent-focus" aria-label="本周跟进焦点">
+              <div className="admin-intent-focus-title">
+                <span>WEEKLY FOCUS</span>
+                <h2>本周跟进焦点</h2>
+              </div>
+              <div className="admin-intent-focus-list">
+                {focusRecords.map((record, index) => (
+                  <article key={record.id}>
+                    <em>{String(index + 1).padStart(2, "0")}</em>
+                    <div>
+                      <div className="admin-intent-focus-name">
+                        <strong>{record.name}</strong>
+                        {record.level && <span>OPC {record.level}</span>}
+                      </div>
+                      <p>命中依据：{highIntentSignals(record).map((item) => item.label).join(" / ")}</p>
+                      <small>偏好：{record.category || "待补充品类"} · AI短板：{record.aiWeakness || "待测"}</small>
+                      <button type="button" onClick={() => openRecordDetail(record.id)}>查看并跟进 <ArrowRight size={14} /></button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+              <button className="admin-intent-all-btn" type="button" onClick={() => { setStatusFilter("全部"); setOwnerFilter("全部顾问"); }}>
+                查看全部高意向用户 <ArrowRight size={15} />
+              </button>
+            </aside>
+          </div>
+        </section>
+      )}
+
+      {activeMetric !== "intent" && <section className="admin-workbench">
         <div className="admin-records-panel">
           <div className="admin-panel-heading">
             <div>
               <span>USER ARCHIVE</span>
-              <h2>用户测评档案</h2>
+              <h2>{adminMetricFilters[activeMetric].label}</h2>
             </div>
-            <p>{filteredRecords.length} / {records.length} 条记录</p>
+            <p>{filteredRecords.length} 条记录</p>
           </div>
           <div className="admin-toolbar">
             <label className="admin-search">
@@ -2805,20 +3068,26 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
             </div>
           </aside>
         )}
-      </section>
+      </section>}
     </main>
   );
 }
 
-function AdminStat({ icon: Icon, label, value }) {
+function AdminStat({ active, icon: Icon, label, onClick, value }) {
   return (
-    <article className="admin-stat-card">
+    <button
+      className={`admin-stat-card${active ? " active" : ""}`}
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      aria-label={`${label} ${value}`}
+    >
       <span><Icon size={24} weight="duotone" /></span>
       <div>
         <strong>{value}</strong>
         <small>{label}</small>
       </div>
-    </article>
+    </button>
   );
 }
 
