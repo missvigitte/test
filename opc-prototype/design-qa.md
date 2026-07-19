@@ -38,6 +38,20 @@
 
 final result: passed
 
+## Admin Private Operations Redesign
+
+- Scope: administrator dashboard at 1440 x 1024 and 390 x 844, including overview, advisor permissions, user directory, priority users, record table and private dossier.
+- Visual system: the dashboard now uses a restrained oxblood masthead, warm stone workspace, antique-gold rules and editorial Song-style display type. Operational content remains dense and scan-friendly instead of becoming a marketing layout.
+- Hierarchy: the masthead, live connection state and command buttons form one clear control region. The metric rail overlaps the masthead to create depth without nested cards or decorative glass effects.
+- Interaction: metric cards expose clear active states and press feedback; data refresh has a loading rotation; advisor permissions open progressively; rows, filters, pagination and icon actions have consistent hover, focus and pressed states.
+- Workflow: general records are paginated to eight rows. Desktop keeps the selected private dossier beside the table; mobile opens the dossier only after an explicit user action and provides a 44px close command.
+- Mobile repair: the previous dashboard children resolved to approximately 1680px wide on a 390px viewport, leaving the first screen visually blank. All dashboard tracks now use `minmax(0, 1fr)` and explicit 100% constraints.
+- Mobile verification: 390px rendering has no horizontal overflow, the live state remains horizontal, four metrics form a stable 2 x 2 rail, advisor permissions fit the viewport and the initial page height is reduced from roughly 13,600px to 4,900px.
+- Accessibility: every interactive control is at least 44px on mobile, focus indicators remain visible, active metrics use `aria-pressed`, the advisor toggle uses `aria-expanded`, and motion is disabled when reduced motion is requested.
+- Verification: 12 automated assessment and access-control tests pass, the production build completes, and browser checks confirm advisor expansion, high-intent filtering, record pagination, mobile dossier opening and zero horizontal overflow.
+
+final result: passed
+
 ## July 15 Modification Completion Pass
 
 - Scope: commercial assessment, AI assessment, OPC positioning report, account history and administrator workspace.

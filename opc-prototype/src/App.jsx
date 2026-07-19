@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
+  ArrowsClockwise,
   ChartLineUp,
   Check,
   CheckCircle,
@@ -2565,10 +2566,14 @@ function AdminDashboard({ adminUser, setAdminUser, setView }) {
   const [ownerFilter, setOwnerFilter] = useState("全部顾问");
   const [activeMetric, setActiveMetric] = useState("all");
   const [intentPage, setIntentPage] = useState(1);
+  const [recordsPage, setRecordsPage] = useState(1);
   const [selectedId, setSelectedId] = useState(() => readAdminRecords()[0]?.id ?? "");
+  const [detailOpen, setDetailOpen] = useState(() => !window.matchMedia("(max-width: 760px)").matches);
   const [loading, setLoading] = useState(false);
   const [remoteError, setRemoteError] = useState("");
   const [reportShareState, setReportShareState] = useState("");
+  const [showAdvisorManager, setShowAdvisorManager] = useState(false);
+  const [syncVersion, setSyncVersion] = useState(0);
 
   useEffect(() => {
     writeAdminRecords(records);
@@ -2602,7 +2607,7 @@ function AdminDashboard({ adminUser, setAdminUser, setView }) {
     return () => {
       active = false;
     };
-  }, [adminLoggedIn, isSuperAdmin]);
+  }, [adminLoggedIn, isSuperAdmin, syncVersion]);
 
   const legacyOwners = [...new Set(records.map((record) => record.owner).filter((owner) => owner && owner !== "未分配"))];
   const ownerOptions = isSuperAdmin
@@ -2638,6 +2643,7 @@ function AdminDashboard({ adminUser, setAdminUser, setView }) {
 
   useEffect(() => {
     setIntentPage(1);
+    setRecordsPage(1);
   }, [activeMetric, ownerFilter, query, statusFilter]);
 
   const selectedBusiness = selectedRecord?.businessResult?.percentScores
@@ -2667,6 +2673,9 @@ function AdminDashboard({ adminUser, setAdminUser, setView }) {
   const intentPageCount = Math.max(1, Math.ceil(filteredRecords.length / 6));
   const effectiveIntentPage = Math.min(intentPage, intentPageCount);
   const visibleIntentRecords = filteredRecords.slice((effectiveIntentPage - 1) * 6, effectiveIntentPage * 6);
+  const recordsPageCount = Math.max(1, Math.ceil(filteredRecords.length / 8));
+  const effectiveRecordsPage = Math.min(recordsPage, recordsPageCount);
+  const visibleRecords = filteredRecords.slice((effectiveRecordsPage - 1) * 8, effectiveRecordsPage * 8);
   const convertedCount = records.filter((record) => record.status === "已转化").length;
 
   function selectMetric(metric) {
@@ -2675,6 +2684,7 @@ function AdminDashboard({ adminUser, setAdminUser, setView }) {
     setOwnerFilter("全部顾问");
     setQuery("");
     setSelectedUserId("");
+    if (window.matchMedia("(max-width: 760px)").matches) setDetailOpen(false);
   }
 
   function openUserDossier(user) {
@@ -2687,9 +2697,15 @@ function AdminDashboard({ adminUser, setAdminUser, setView }) {
 
   function openRecordDetail(id) {
     setSelectedId(id);
+    setDetailOpen(true);
     setActiveMetric("all");
     setStatusFilter("全部");
     setOwnerFilter("全部顾问");
+    window.requestAnimationFrame(() => {
+      if (window.matchMedia("(max-width: 760px)").matches) {
+        document.querySelector("#admin-record-detail")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
   }
 
   async function copyUserReportEntry(record) {
@@ -2820,8 +2836,8 @@ function AdminDashboard({ adminUser, setAdminUser, setView }) {
     <main className="page-shell admin-shell admin-dashboard-shell" style={{ "--admin-wave-bg": `url(${fruitWineWave})` }}>
       <section className="admin-dashboard-head">
         <div className="admin-head-copy">
-          <span className="document-kicker">OPC ADMIN CONSOLE</span>
-          <h1>用户测评管理</h1>
+          <div className="admin-head-kicker"><span>PRIVATE CLIENT OPERATIONS</span><i aria-hidden="true" /></div>
+          <h1>用户与商业档案</h1>
           <p>{loading ? "正在同步最新测评记录..." : `${adminUser?.name} · ${isSuperAdmin ? "超级管理员可查看并分配全量用户" : "顾问仅显示分配给你的用户"}`}</p>
           {remoteError && <p className="admin-sync-note" role="status">{remoteError}</p>}
         </div>
@@ -2830,20 +2846,28 @@ function AdminDashboard({ adminUser, setAdminUser, setView }) {
             <i aria-hidden="true" />
             {loading ? "正在同步数据" : remoteError ? "当前显示本地缓存" : "数据档案已连接"}
           </span>
-          <button className="ghost-btn" type="button" onClick={logout}>
-            <SignOut size={18} /> 退出
-          </button>
+          <div className="admin-head-buttons">
+            {isSuperAdmin && <button className={`admin-team-toggle${showAdvisorManager ? " active" : ""}`} type="button" onClick={() => setShowAdvisorManager((current) => !current)} aria-expanded={showAdvisorManager} aria-controls="advisor-manager">
+              <UsersThree size={17} /> 顾问权限
+            </button>}
+            <button className="admin-sync-button" type="button" onClick={() => setSyncVersion((current) => current + 1)} disabled={loading}>
+              <ArrowsClockwise className={loading ? "is-spinning" : ""} size={17} /> 刷新
+            </button>
+            <button className="ghost-btn" type="button" onClick={logout}>
+              <SignOut size={17} /> 退出
+            </button>
+          </div>
         </div>
       </section>
 
       <section className="admin-stat-grid" aria-label="后台关键指标">
-        <AdminStat active={activeMetric === "all"} icon={UsersThree} label="注册用户" onClick={() => selectMetric("all")} value={users.length} />
-        <AdminStat active={activeMetric === "intent"} icon={ChartLineUp} label="高意向用户" onClick={() => selectMetric("intent")} value={highIntentCount} />
-        <AdminStat active={activeMetric === "pending"} icon={FunnelSimple} label="待处理" onClick={() => selectMetric("pending")} value={pendingCount} />
-        <AdminStat active={activeMetric === "converted"} icon={CheckCircle} label="已转化" onClick={() => selectMetric("converted")} value={convertedCount} />
+        <AdminStat active={activeMetric === "all"} hint="全部客户档案" icon={UsersThree} index="01" label="注册用户" onClick={() => selectMetric("all")} value={users.length} />
+        <AdminStat active={activeMetric === "intent"} hint="优先跟进名单" icon={ChartLineUp} index="02" label="高意向用户" onClick={() => selectMetric("intent")} value={highIntentCount} />
+        <AdminStat active={activeMetric === "pending"} hint="待分配与待跟进" icon={FunnelSimple} index="03" label="待处理" onClick={() => selectMetric("pending")} value={pendingCount} />
+        <AdminStat active={activeMetric === "converted"} hint="已完成商业转化" icon={CheckCircle} index="04" label="已转化" onClick={() => selectMetric("converted")} value={convertedCount} />
       </section>
 
-      {isSuperAdmin && <section className="admin-advisor-manager" aria-labelledby="advisor-manager-title">
+      {isSuperAdmin && showAdvisorManager && <section className="admin-advisor-manager admin-reveal-panel" id="advisor-manager" aria-labelledby="advisor-manager-title">
         <div className="admin-advisor-heading"><span>TEAM ACCESS</span><h2 id="advisor-manager-title">顾问账号与数据权限</h2><p>顾问登录后只看到分配给自己的用户。</p></div>
         <form onSubmit={handleCreateAdvisor}>
           <label><span>顾问姓名</span><input value={advisorForm.name} onChange={(event) => setAdvisorForm({ ...advisorForm, name: event.target.value })} placeholder="例如：Mia" required /></label>
@@ -2894,7 +2918,7 @@ function AdminDashboard({ adminUser, setAdminUser, setView }) {
                   <span>PRIORITY USERS</span>
                   <h2>{highIntentCount}位高意向用户</h2>
                 </div>
-                <p>{filteredRecords.length} / {highIntentCount} 条记录</p>
+                <p>{filteredRecords.length} 条记录 · {highIntentCount} 位用户</p>
               </div>
 
               <div className="admin-intent-toolbar">
@@ -3036,7 +3060,7 @@ function AdminDashboard({ adminUser, setAdminUser, setView }) {
         </section>
       )}
 
-      {activeMetric !== "intent" && <section className="admin-workbench">
+      {activeMetric !== "intent" && <section className={`admin-workbench${selectedRecord && detailOpen ? " has-detail" : ""}`}>
         <div className="admin-records-panel">
           <div className="admin-panel-heading">
             <div>
@@ -3078,13 +3102,13 @@ function AdminDashboard({ adminUser, setAdminUser, setView }) {
                 </tr>
               </thead>
               <tbody>
-                {filteredRecords.map((record) => (
+                {visibleRecords.map((record) => (
                   <tr className={record.id === selectedRecord?.id ? "selected" : ""} key={record.id}>
                     <td>
                       <button
                         className="admin-user-cell"
                         type="button"
-                        onClick={() => setSelectedId(record.id)}
+                        onClick={() => openRecordDetail(record.id)}
                         aria-pressed={record.id === selectedRecord?.id}
                       >
                         <strong>{record.name}</strong>
@@ -3115,7 +3139,7 @@ function AdminDashboard({ adminUser, setAdminUser, setView }) {
                     </td>
                     <td>
                       <div className="admin-row-actions">
-                        <button type="button" onClick={() => setSelectedId(record.id)} aria-label={`查看${record.name}`}>
+                        <button type="button" onClick={() => openRecordDetail(record.id)} aria-label={`查看${record.name}`}>
                           <Eye size={16} />
                         </button>
                         {isSuperAdmin && <button type="button" onClick={() => deleteRecord(record.id)} aria-label={`删除${record.name}`}>
@@ -3129,13 +3153,18 @@ function AdminDashboard({ adminUser, setAdminUser, setView }) {
             </table>
             {!filteredRecords.length && <p className="admin-empty">没有符合条件的记录。</p>}
           </div>
+          {filteredRecords.length > 0 && <nav className="admin-record-pagination" aria-label="用户记录分页">
+            <button type="button" onClick={() => setRecordsPage((page) => Math.max(1, page - 1))} disabled={effectiveRecordsPage === 1}>上一页</button>
+            <span>{effectiveRecordsPage} / {recordsPageCount}</span>
+            <button type="button" onClick={() => setRecordsPage((page) => Math.min(recordsPageCount, page + 1))} disabled={effectiveRecordsPage === recordsPageCount}>下一页</button>
+          </nav>}
         </div>
 
-        {selectedRecord && (
-          <aside className="admin-detail-panel" aria-label="用户记录详情">
+        {selectedRecord && detailOpen && (
+          <aside className="admin-detail-panel" id="admin-record-detail" aria-label="用户记录详情">
             <div className="admin-detail-label">
               <span>PRIVATE DOSSIER</span>
-              <small>完整测评档案</small>
+              <div className="admin-detail-label-actions"><small>完整测评档案</small><button type="button" onClick={() => setDetailOpen(false)} aria-label="关闭用户详情"><X size={17} /></button></div>
             </div>
             <div className="admin-detail-top">
               <span>{selectedRecord.id}</span>
@@ -3299,7 +3328,7 @@ function AdminDashboard({ adminUser, setAdminUser, setView }) {
   );
 }
 
-function AdminStat({ active, icon: Icon, label, onClick, value }) {
+function AdminStat({ active, hint, icon: Icon, index, label, onClick, value }) {
   return (
     <button
       className={`admin-stat-card${active ? " active" : ""}`}
@@ -3308,10 +3337,12 @@ function AdminStat({ active, icon: Icon, label, onClick, value }) {
       aria-pressed={active}
       aria-label={`${label} ${value}`}
     >
-      <span><Icon size={24} weight="duotone" /></span>
+      <em>{index}</em>
+      <span><Icon size={23} weight="duotone" /></span>
       <div>
         <strong>{value}</strong>
         <small>{label}</small>
+        <p>{hint}<ArrowRight size={13} /></p>
       </div>
     </button>
   );
