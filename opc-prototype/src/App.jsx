@@ -43,6 +43,7 @@ import {
   isAssessmentComplete,
 } from "./assessment.js";
 import { aiToolCatalog, toolsByIds, toolsForArea } from "./aiTools.js";
+import { countUniqueUsers } from "./recordAccess.js";
 import {
   buildBespokeRoute,
   buildCategoryRationales,
@@ -59,6 +60,7 @@ const stepLabels = [
 const ADMIN_RECORDS_KEY = "opc-admin-records";
 const LEAD_INFO_KEY = "opc-lead-info";
 const PENDING_ASSESSMENT_KEY = "opc-pending-assessment";
+const PENDING_REPORT_KEY = "opc-pending-report";
 
 const assessmentMeta = {
   business: {
@@ -840,11 +842,72 @@ function UserAuthPage({ onAuthenticated, onNavigate }) {
   );
 }
 
+function accountRecordDescription(record) {
+  if (record.assessmentType === "business") return "六维能力、OPC等级与女性赛道建议";
+  if (record.assessmentType === "ai") return "AI能力分布、优先短板与解决方案";
+  return record.reportUnlocked
+    ? "完整能力图、赛道依据、AI方案与30天行动路径"
+    : "基础定位结果已生成，完整解读尚未开放";
+}
+
+function HistoricalRecordReport({ record, onNavigate }) {
+  const business = record.businessResult;
+  const ai = record.aiResult;
+  const locked = record.assessmentType === "opc" && !record.reportUnlocked;
+
+  if (locked) {
+    return <div className="account-report-locked"><LockKey size={18} /><span>完整能力图、AI解决方案和30天路径尚未开放。添加微信 <strong>Her-AICircle</strong> 获取解读。</span></div>;
+  }
+
+  const dimensionReport = business?.percentScores ? buildDimensionReport(business) : [];
+  const categoryRationales = business && ai && business.percentScores
+    ? buildCategoryRationales(business, ai)
+    : [];
+  const aiSolution = ai ? getAiSolution(ai.weakest) : null;
+  const recommendedTools = aiSolution ? toolsByIds(aiSolution.toolIds) : [];
+  const route = business && ai ? buildBespokeRoute(business, ai) : [];
+  const aiAreas = ai?.areas && ai?.percent
+    ? [...ai.areas].sort((left, right) => ai.percent[right] - ai.percent[left])
+    : [];
+
+  return <div className="account-full-report">
+    {business && dimensionReport.length > 0 && <section className="account-report-section">
+      <header><span>01 · CAPABILITY MAP</span><h4>六维商业能力</h4><p>{business.level.level} · {business.level.name}，当前优势是{business.strongestDim}。</p></header>
+      <div className="account-report-capability">
+        <div className="account-report-radar"><RadarChart scores={business.percentScores} mobile /><p className="sr-only">{dimensions.map((dimension) => `${dimension}${business.percentScores[dimension]}分`).join("，")}</p></div>
+        <div className="account-report-bars">{dimensionReport.map((item) => <div key={item.dimension}><span><strong>{item.dimension}</strong><small>{item.insight}</small></span><i aria-hidden="true"><b style={{ width: `${item.score}%` }} /></i><em>{item.score}</em></div>)}</div>
+      </div>
+    </section>}
+
+    {business?.recommendedCategories?.length > 0 && <section className="account-report-section">
+      <header><span>02 · TRACK MATCHING</span><h4>推荐赛道 Top3</h4><p>结果来自六维分数与18个品类权重矩阵。</p></header>
+      <div className="account-report-categories">{business.recommendedCategories.map((category, index) => {
+        const rationale = categoryRationales[index];
+        return <article key={category.name}><em>0{index + 1}</em><div><strong>{category.name}</strong><p>{rationale?.reason || `${category.gate} · ${category.income}`}</p>{rationale?.drivers?.length > 0 && <small>{rationale.drivers.map((driver) => `${driver.dimension} +${driver.contribution}`).join(" · ")}</small>}</div><b>{category.match}%</b></article>;
+      })}</div>
+    </section>}
+
+    {ai && aiAreas.length > 0 && <section className="account-report-section">
+      <header><span>03 · AI SOLUTION</span><h4>{aiSolution.title}</h4><p>{aiSolution.summary}</p></header>
+      <div className="account-report-ai-bars">{aiAreas.map((area) => <div className={area === ai.weakest ? "is-priority" : ""} key={area}><span><strong>{area}</strong><small>{area === ai.weakest ? "优先补齐" : "当前成熟度"}</small></span><i aria-hidden="true"><b style={{ width: `${ai.percent[area]}%` }} /></i><em>{ai.percent[area]}</em></div>)}</div>
+      <div className="account-report-prescription"><strong>本周动作</strong><p>{aiSolution.action}</p><div>{recommendedTools.map((tool) => <a href={tool.url} target="_blank" rel="noreferrer" key={tool.id}>{tool.name}<ArrowRight size={14} /></a>)}</div><button type="button" onClick={() => onNavigate("ai-tools")}>查看完整AI工具库</button></div>
+    </section>}
+
+    {route.length > 0 && <section className="account-report-section">
+      <header><span>04 · 30 DAY ROUTE</span><h4>你的30天启动路径</h4><p>从定位校准到下一等级验证，每周保留一个明确产出。</p></header>
+      <div className="account-report-route">{route.map((item, index) => <article key={item.title}><em>0{index + 1}</em><div><span>{item.period}</span><strong>{item.title}</strong><p>{item.text}</p><small>{item.output}</small></div></article>)}</div>
+    </section>}
+  </div>;
+}
+
 function UserAccountPage({ currentUser, onNavigate, onLogout }) {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [shareFeedback, setShareFeedback] = useState("");
+  const targetRecordId = useMemo(() => (
+    typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("record") || ""
+  ), []);
 
   useEffect(() => {
     let active = true;
@@ -854,6 +917,14 @@ function UserAccountPage({ currentUser, onNavigate, onLogout }) {
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    if (loading || !targetRecordId || !records.some((record) => record.id === targetRecordId)) return;
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(`account-record-${targetRecordId}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [loading, records, targetRecordId]);
 
   function recordSummary(record) {
     if (record.assessmentType === "ai") return `${record.aiScore ?? 0}分 · 优先补齐${record.aiWeakness || "工具流程"}`;
@@ -900,20 +971,17 @@ function UserAccountPage({ currentUser, onNavigate, onLogout }) {
             const type = record.assessmentType || "opc";
             const meta = assessmentMeta[type] || assessmentMeta.opc;
             return (
-              <article className={`account-record account-record-${type}`} key={record.id}>
+              <article className={`account-record account-record-${type}`} id={`account-record-${record.id}`} key={record.id}>
                 <div className="account-record-index"><span>{meta.shortTitle}</span><strong>{type === "ai" ? record.aiScore : record.level || "OPC"}</strong></div>
-                <div className="account-record-main"><small>{record.createdAt?.replace("T", " ").slice(0, 16)}</small><h3>{recordSummary(record)}</h3><p>{record.note}</p></div>
+                <div className="account-record-main"><small>{record.createdAt?.replace("T", " ").slice(0, 16)}</small><h3>{recordSummary(record)}</h3><p>{accountRecordDescription(record)}</p></div>
                 <div className="account-record-actions">
                   <button type="button" onClick={() => shareAssessment(type, (message) => { setShareFeedback(`${record.id}:${message}`); window.setTimeout(() => setShareFeedback(""), 1800); })}><ShareNetwork size={17} />{shareFeedback.startsWith(record.id) ? shareFeedback.split(":")[1] : "分享测评"}</button>
                   <button type="button" onClick={() => onNavigate(`${type}-intro`)}>重新测评 <ArrowRight size={16} /></button>
                 </div>
                 {(record.businessResult || record.aiResult) && (
-                  <details className="account-record-detail">
-                    <summary>查看详细结果</summary>
-                    {record.businessResult && <><p><strong>商业总分</strong>{record.businessResult.totalScore} / 100</p><p><strong>最强维度</strong>{record.businessResult.strongestDim}</p><p><strong>Top3赛道</strong>{record.businessResult.recommendedCategories?.map((item) => `${item.short} ${item.match}%`).join(" · ")}</p></>}
-                    {record.assessmentType === "opc" && !record.reportUnlocked ? (
-                      <div className="account-report-locked"><LockKey size={18} /><span>完整能力图、AI解决方案和30天路径尚未开放。添加微信 <strong>Her-AICircle</strong> 获取解读。</span></div>
-                    ) : record.aiResult && <><p><strong>AI总分</strong>{record.aiResult.total} / 100</p><p><strong>最强能力</strong>{record.aiResult.strongest}</p><p><strong>优先短板</strong>{record.aiResult.weakest}</p></>}
+                  <details className="account-record-detail" open={targetRecordId === record.id}>
+                    <summary>{record.assessmentType === "opc" && !record.reportUnlocked ? "查看基础结果" : "查看完整结果"}</summary>
+                    <HistoricalRecordReport record={record} onNavigate={onNavigate} />
                   </details>
                 )}
               </article>
@@ -2500,6 +2568,7 @@ function AdminDashboard({ adminUser, setAdminUser, setView }) {
   const [selectedId, setSelectedId] = useState(() => readAdminRecords()[0]?.id ?? "");
   const [loading, setLoading] = useState(false);
   const [remoteError, setRemoteError] = useState("");
+  const [reportShareState, setReportShareState] = useState("");
 
   useEffect(() => {
     writeAdminRecords(records);
@@ -2571,8 +2640,12 @@ function AdminDashboard({ adminUser, setAdminUser, setView }) {
     setIntentPage(1);
   }, [activeMetric, ownerFilter, query, statusFilter]);
 
-  const selectedBusiness = selectedRecord?.businessResult ?? null;
-  const selectedAi = selectedRecord?.aiResult ?? null;
+  const selectedBusiness = selectedRecord?.businessResult?.percentScores
+    ? selectedRecord.businessResult
+    : null;
+  const selectedAi = selectedRecord?.aiResult?.percent
+    ? selectedRecord.aiResult
+    : null;
   const selectedDimensions = selectedBusiness ? buildDimensionReport(selectedBusiness) : [];
   const selectedCategories = selectedBusiness?.recommendedCategories ?? [];
   const selectedAiAreas = selectedAi?.areas
@@ -2581,11 +2654,11 @@ function AdminDashboard({ adminUser, setAdminUser, setView }) {
   const selectedRoute = selectedBusiness && selectedAi ? buildBespokeRoute(selectedBusiness, selectedAi) : [];
   const pendingCount = records.filter((record) => ["待跟进", "待分配"].includes(record.status)).length;
   const highIntentRecords = records.filter((record) => highIntentSignals(record).length > 0);
-  const highIntentCount = highIntentRecords.length;
+  const highIntentCount = countUniqueUsers(highIntentRecords);
   const highIntentCriteriaCounts = {
-    credit: highIntentRecords.filter((record) => Number(record.credit) >= 800).length,
-    level: highIntentRecords.filter((record) => ["L7", "L8", "L9"].includes(record.level)).length,
-    match: highIntentRecords.filter((record) => Number(record.match) >= 80).length,
+    credit: countUniqueUsers(highIntentRecords.filter((record) => Number(record.credit) >= 800)),
+    level: countUniqueUsers(highIntentRecords.filter((record) => ["L7", "L8", "L9"].includes(record.level))),
+    match: countUniqueUsers(highIntentRecords.filter((record) => Number(record.match) >= 80)),
   };
   const focusRecords = [...highIntentRecords]
     .filter((record) => !["已转化", "已归档"].includes(record.status))
@@ -2617,6 +2690,21 @@ function AdminDashboard({ adminUser, setAdminUser, setView }) {
     setActiveMetric("all");
     setStatusFilter("全部");
     setOwnerFilter("全部顾问");
+  }
+
+  async function copyUserReportEntry(record) {
+    if (!record.reportUnlocked) {
+      setReportShareState("请先开放完整报告");
+      return;
+    }
+    const url = new URL(viewPaths.account, window.location.origin);
+    url.searchParams.set("record", record.id);
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      setReportShareState("报告入口已复制，可发送给用户");
+    } catch {
+      setReportShareState("复制失败，请稍后重试");
+    }
   }
 
   function exportVisibleRecords() {
@@ -3199,7 +3287,11 @@ function AdminDashboard({ adminUser, setAdminUser, setView }) {
               <button type="button" className="ghost-btn" onClick={() => persistRecord(selectedRecord.id, { status: "已转化" })}>
                 标记已转化
               </button>
+              <button type="button" className="ghost-btn admin-report-share" onClick={() => copyUserReportEntry(selectedRecord)}>
+                <Copy size={16} />复制用户报告入口
+              </button>
             </div>
+            {reportShareState && <p className="admin-report-share-state" role="status">{reportShareState}</p>}
           </aside>
         )}
       </section>}
@@ -3397,6 +3489,10 @@ export function App() {
     if (!["business", "ai", "business-result", "ai-result", "account"].includes(view)) return;
     const pendingType = view.startsWith("business") ? "business" : view.startsWith("ai") ? "ai" : "";
     if (pendingType) window.sessionStorage.setItem(PENDING_ASSESSMENT_KEY, pendingType);
+    if (view === "account") {
+      const pendingReport = new URLSearchParams(window.location.search).get("record");
+      if (pendingReport) window.sessionStorage.setItem(PENDING_REPORT_KEY, pendingReport);
+    }
     navigate("login", { replace: true });
   }, [authReady, currentUser, view]);
 
@@ -3506,11 +3602,16 @@ export function App() {
     setLeadInfo(info);
     writeStoredLeadInfo(info);
     const pendingType = window.sessionStorage.getItem(PENDING_ASSESSMENT_KEY);
+    const pendingReport = window.sessionStorage.getItem(PENDING_REPORT_KEY);
     window.sessionStorage.removeItem(PENDING_ASSESSMENT_KEY);
+    window.sessionStorage.removeItem(PENDING_REPORT_KEY);
     if (pendingType && assessmentMeta[pendingType]) {
       startAssessmentWithUser(pendingType, user);
     } else {
       navigate("account");
+      if (pendingReport) {
+        window.history.replaceState({ view: "account" }, "", `${viewPaths.account}?record=${encodeURIComponent(pendingReport)}`);
+      }
     }
   }
 

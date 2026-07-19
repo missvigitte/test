@@ -6,6 +6,7 @@ import {
   creditScore,
   isAssessmentComplete,
 } from "./assessment.js";
+import { publicRecordForUser } from "./recordAccess.js";
 
 const DEFAULT_ADMIN_PASSWORD = "opc2026";
 const ADMIN_STATUSES = new Set(["待跟进", "待分配", "已联系", "已转化", "已归档"]);
@@ -184,8 +185,10 @@ function parseJson(value, fallback = null) {
   }
 }
 
-function adminPassword(env) {
-  return env.ADMIN_API_KEY || DEFAULT_ADMIN_PASSWORD;
+function adminPassword(env, request) {
+  if (env.ADMIN_API_KEY) return env.ADMIN_API_KEY;
+  const hostname = new URL(request.url).hostname;
+  return ["127.0.0.1", "localhost", "::1"].includes(hostname) ? DEFAULT_ADMIN_PASSWORD : "";
 }
 
 function normalizeRecord(body, userId = null) {
@@ -282,28 +285,6 @@ function rowToRecord(row) {
     aiResult: parseJson(row.ai_result),
     businessAnswers: parseJson(row.business_answers, []),
     aiAnswers: parseJson(row.ai_answers, []),
-  };
-}
-
-function recordForUser(record) {
-  if (record.assessmentType !== "opc" || record.reportUnlocked) return record;
-  const business = record.businessResult;
-  const ai = record.aiResult;
-  return {
-    ...record,
-    businessResult: business ? {
-      totalScore: business.totalScore,
-      level: business.level,
-      strongestDim: business.strongestDim,
-      recommendedCategories: business.recommendedCategories?.slice(0, 3) ?? [],
-    } : null,
-    aiResult: ai ? {
-      total: ai.total,
-      strongest: ai.strongest,
-      weakest: ai.weakest,
-    } : null,
-    businessAnswers: [],
-    aiAnswers: [],
   };
 }
 
@@ -435,7 +416,7 @@ async function listUserRecords(env, userId) {
     ORDER BY created_at DESC, updated_at DESC
     LIMIT 200
   `).bind(userId).all();
-  return (result.results || []).map(rowToRecord).map(recordForUser);
+  return (result.results || []).map(rowToRecord).map(publicRecordForUser);
 }
 
 async function patchRecord(env, id, body, admin) {
@@ -528,7 +509,7 @@ async function loginAdmin(request, env) {
   const password = String(body.password ?? "");
   let admin = null;
 
-  if (account === "admin" && password === adminPassword(env)) {
+  if (account === "admin" && password === adminPassword(env, request)) {
     admin = { account: "admin", name: "超级管理员", role: "superadmin" };
   } else {
     const advisor = await env.DB.prepare("SELECT * FROM advisor_accounts WHERE account = ? AND active = 1").bind(account).first();
@@ -678,7 +659,7 @@ async function handleApi(request, env, url) {
       const user = await userFromRequest(request, env);
       if (!user) return json({ ok: false, error: "请先登录后提交测评。" }, 401);
       const record = await upsertRecord(env, body, user.id);
-      return json({ ok: true, record: recordForUser(record) }, 201);
+      return json({ ok: true, record: publicRecordForUser(record) }, 201);
     } catch (error) {
       return json({ ok: false, error: error.message || "记录保存失败。" }, 400);
     }

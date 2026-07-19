@@ -12,6 +12,7 @@ import {
   levelMap,
 } from "./assessment.js";
 import { aiToolCatalog } from "./aiTools.js";
+import { countUniqueUsers, publicRecordForUser } from "./recordAccess.js";
 import {
   aiSolutions,
   buildCategoryRationales,
@@ -149,4 +150,44 @@ test("Top3 rationale is derived from the same weighted category result", () => {
     assert.equal(item.drivers.length, 2);
     assert.match(item.reason, /主要贡献项/);
   });
+});
+
+test("user records never expose private CRM fields", () => {
+  const business = calculateBusiness(commercialQuestions.map(() => 0));
+  const ai = calculateAi(aiQuestions.map(() => 0));
+  const base = {
+    id: "record-1",
+    assessmentType: "opc",
+    reportUnlocked: true,
+    status: "已联系",
+    owner: "Advisor",
+    source: "后台来源",
+    note: "内部跟进备注",
+    unlockedBy: "超级管理员",
+    businessResult: business,
+    aiResult: ai,
+    businessAnswers: commercialQuestions.map(() => 0),
+    aiAnswers: aiQuestions.map(() => 0),
+  };
+  const unlocked = publicRecordForUser(base);
+  ["status", "owner", "source", "note", "unlockedBy"].forEach((field) => {
+    assert.equal(Object.prototype.hasOwnProperty.call(unlocked, field), false);
+  });
+  assert.equal(unlocked.businessResult.percentScores[dimensions[0]], 100);
+
+  const locked = publicRecordForUser({ ...base, reportUnlocked: false });
+  assert.equal(Object.prototype.hasOwnProperty.call(locked.businessResult, "percentScores"), false);
+  assert.deepEqual(locked.businessAnswers, []);
+  assert.deepEqual(locked.aiAnswers, []);
+});
+
+test("high-intent totals count unique users instead of assessment rows", () => {
+  const records = [
+    { id: "a", userId: "user-1", phone: "13800000001" },
+    { id: "b", userId: "user-1", phone: "13800000001" },
+    { id: "c", userId: "user-2", phone: "13800000002" },
+    { id: "d", phone: "13800000003" },
+    { id: "e", phone: "13800000003" },
+  ];
+  assert.equal(countUniqueUsers(records), 3);
 });

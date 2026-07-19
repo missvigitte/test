@@ -17629,3 +17629,307 @@ body {
     animation: none;
   }
 }
+
+/* Historical result dossier */
+.account-full-report {
+  display: grid;
+  gap: 0;
+  margin-top: 22px;
+  border-top: 1px solid rgba(108, 69, 45, 0.16);
+}
+
+.account-full-report p {
+  display: block;
+  grid-template-columns: none;
+}
+
+.account-report-section {
+  padding: 30px 0;
+  border-bottom: 1px solid rgba(108, 69, 45, 0.14);
+}
+
+.account-report-section > header {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 22px;
+}
+
+.account-report-section > header > span {
+  color: var(--editorial-gold-text, #77552f);
+  font-size: 11px;
+  font-weight: 760;
+}
+
+.account-report-section > header h4 {
+  margin: 0;
+  color: var(--atelier-ink, #321923);
+  font-family: var(--opc-font-display);
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1.12;
+}
+
+.account-report-section > header p {
+  margin: 0;
+  color: var(--opc-muted, #67555d);
+  line-height: 1.8;
+}
+
+.account-report-capability {
+  display: grid;
+  grid-template-columns: minmax(230px, 0.72fr) minmax(360px, 1.28fr);
+  gap: 28px;
+  align-items: center;
+}
+
+.account-report-radar {
+  min-width: 0;
+}
+
+.account-report-radar .radar-canvas {
+  width: 100%;
+  max-width: 320px;
+  margin-inline: auto;
+}
+
+.account-report-bars,
+.account-report-ai-bars {
+  display: grid;
+  gap: 13px;
+}
+
+.account-report-bars > div,
+.account-report-ai-bars > div {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) minmax(90px, 0.8fr) 34px;
+  gap: 12px;
+  align-items: center;
+}
+
+.account-report-bars span,
+.account-report-ai-bars span {
+  display: grid;
+  gap: 3px;
+}
+
+.account-report-bars span strong,
+.account-report-ai-bars span strong {
+  color: var(--atelier-ink, #321923);
+  font-size: 14px;
+}
+
+.account-report-bars span small,
+.account-report-ai-bars span small {
+  overflow: hidden;
+  color: var(--opc-muted, #67555d);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-report-bars i,
+.account-report-ai-bars i {
+  height: 3px;
+  overflow: hidden;
+  background: rgba(80, 42, 52, 0.1);
+}
+
+.account-report-bars i b,
+.account-report-ai-bars i b {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #552038, #b28d50);
+}
+
+.account-report-bars em,
+.account-report-ai-bars em {
+  color: var(--atelier-ink, #321923);
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.account-report-ai-bars .is-priority {
+  padding-block: 10px;
+  border-block: 1px solid rgba(128, 72, 68, 0.16);
+}
+
+.account-report-categories {
+  display: grid;
+}
+
+.account-report-categories article {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 58px;
+  gap: 16px;
+  align-items: start;
+  padding: 18px 0;
+  border-top: 1px solid rgba(108, 69, 45, 0.12);
+}
+
+.account-report-categories article > em {
+  color: var(--editorial-gold-text, #77552f);
+  font-family: var(--opc-font-display);
+  font-size: 20px;
+  font-style: normal;
+}
+
+.account-report-categories article > div {
+  display: grid;
+  gap: 7px;
+}
+
+.account-report-categories article strong {
+  color: var(--atelier-ink, #321923);
+  font-size: 16px;
+}
+
+.account-report-categories article p,
+.account-report-categories article small {
+  margin: 0;
+  color: var(--opc-muted, #67555d);
+  line-height: 1.7;
+}
+
+.account-report-categories article > b {
+  color: #552038;
+  font-family: var(--opc-font-display);
+  font-size: 24px;
+  font-weight: 400;
+  text-align: right;
+}
+
+.account-report-prescription {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 22px 0 0;
+  border-top: 1px solid rgba(108, 69, 45, 0.12);
+}
+
+.account-report-prescription > strong {
+  color: var(--editorial-gold-text, #77552f);
+  font-size: 12px;
+}
+
+.account-report-prescription > p {
+  margin: 0;
+  color: var(--atelier-ink, #321923);
+  line-height: 1.8;
+}
+
+.account-report-prescription > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.account-report-prescription a,
+.account-report-prescription button {
+  min-height: 44px;
+  border: 1px solid rgba(91, 43, 57, 0.18);
+  color: #552038;
+  background: rgba(255, 251, 245, 0.58);
+}
+
+.account-report-prescription a {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  padding: 0 14px;
+  text-decoration: none;
+}
+
+.account-report-prescription button {
+  justify-self: start;
+  padding-inline: 18px;
+}
+
+.account-report-route {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 28px;
+}
+
+.account-report-route article {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 12px;
+  padding: 18px 0;
+  border-top: 1px solid rgba(108, 69, 45, 0.12);
+}
+
+.account-report-route article > em {
+  color: var(--editorial-gold-text, #77552f);
+  font-family: var(--opc-font-display);
+  font-size: 18px;
+  font-style: normal;
+}
+
+.account-report-route article > div {
+  display: grid;
+  gap: 5px;
+}
+
+.account-report-route span,
+.account-report-route small {
+  color: var(--opc-muted, #67555d);
+}
+
+.account-report-route strong {
+  color: var(--atelier-ink, #321923);
+}
+
+.account-report-route p {
+  margin: 0;
+  color: var(--opc-muted, #67555d);
+  line-height: 1.7;
+}
+
+.admin-report-share {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+}
+
+.admin-report-share-state {
+  margin: 10px 0 0;
+  color: var(--editorial-gold-text, #77552f);
+  font-size: 12px;
+}
+
+@media (max-width: 760px) {
+  .account-report-section {
+    padding: 24px 0;
+  }
+
+  .account-report-section > header h4 {
+    font-size: 27px;
+  }
+
+  .account-report-capability,
+  .account-report-route {
+    grid-template-columns: 1fr;
+  }
+
+  .account-report-bars > div,
+  .account-report-ai-bars > div {
+    grid-template-columns: minmax(116px, 1fr) minmax(74px, 0.65fr) 30px;
+    gap: 8px;
+  }
+
+  .account-report-bars span small {
+    max-width: 140px;
+  }
+
+  .account-report-categories article {
+    grid-template-columns: 32px minmax(0, 1fr) 48px;
+    gap: 10px;
+  }
+
+  .account-report-prescription a,
+  .account-report-prescription button {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

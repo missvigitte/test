@@ -47,6 +47,11 @@ final result: passed
 - Administration: super administrators can group records by registered user, inspect every report, assign an advisor, unlock or revoke OPC detail access and manage advisor accounts. Advisors can only view and update records assigned to them and cannot delete or reassign records.
 - AI tool library: ten tools cover all six assessment dimensions. Chinese route aliases and standalone share URLs are available for all three assessments and the tool library.
 - Accessibility: the result page now has a single primary `h1`; locked-state commands meet the 44px mobile target; reduced-motion preferences are respected.
-- Verification: 10 assessment tests pass, the production build completes, the remote D1 migration applies successfully, and API integration verifies locked redaction, unlocking, advisor isolation and user aggregation.
+- Historical reports: unlocked OPC records now reopen as complete dossiers with the radar chart, six dimension narratives, Top3 rationale, AI efficiency diagnosis, official tool links and a 30-day action route. Legacy summary-only records degrade to a clear unavailable state instead of crashing the account or admin page.
+- Data privacy: user-facing record APIs never expose CRM status, advisor ownership, source, internal notes or unlock operator metadata. Locked OPC answer sheets and percentages remain redacted.
+- Intent statistics: dashboard high-intent totals and status counts are calculated by unique user identity instead of duplicated assessment rows.
+- Advisor handoff: administrators can copy a direct account report URL for any unlocked record. Unauthenticated recipients return to that exact report after sign-in.
+- Production access: the administrator credential is supplied through the Cloudflare `ADMIN_API_KEY` secret; the former development password only works on localhost.
+- Verification: 12 assessment and access-control tests pass, the production build completes, and browser integration verifies the full historical dossier, private-field isolation, mobile overflow, advisor report sharing and legacy-record compatibility.
 
 final result: passed
