@@ -32,85 +32,23 @@ import fruitWineWave from "./assets/fruit-wine-wave.webp";
 import oxbloodVelvet from "./assets/oxblood-velvet.jpg";
 import tzhSignatureFlow from "./assets/tzh-signature-flow-v2.webp";
 import {
+  aiQuestions,
   calculateAi as calculateAiCore,
   calculateBusiness as calculateBusinessCore,
+  categoryWeights,
+  commercialQuestions,
   creditScore as calculateCreditScore,
+  dimensionMeta,
+  dimensions,
   isAssessmentComplete,
 } from "./assessment.js";
-
-const dimensions = [
-  "内容能力",
-  "商业判断力",
-  "AI工具熟练度",
-  "销售敏感度",
-  "学习能力",
-  "社交影响力",
-];
-
-const categoryWeights = [
-  { name: "果酒/低度酒", short: "果酒", weights: [85, 70, 60, 55, 65, 80], gate: "轻量启动", market: "250亿", growth: "18%", income: "3-8K" },
-  { name: "美妆/护肤", short: "美妆", weights: [90, 80, 65, 75, 70, 85], gate: "内容专业", market: "5000亿", growth: "12%", income: "5-15K" },
-  { name: "健康食品/营养师", short: "健康食品", weights: [70, 65, 55, 60, 75, 70], gate: "信任科普", market: "800亿", growth: "20%", income: "3-10K" },
-  { name: "母婴用品", short: "母婴", weights: [75, 70, 55, 80, 65, 90], gate: "强信任", market: "4.5万亿", growth: "10%", income: "5-12K" },
-  { name: "家居收纳/整理", short: "家居收纳", weights: [65, 60, 50, 65, 60, 75], gate: "入门友好", market: "120亿", growth: "25%", income: "3-8K" },
-  { name: "女性服饰/穿搭", short: "女性服饰", weights: [85, 70, 60, 70, 65, 80], gate: "视觉表达", market: "2万亿", growth: "8%", income: "4-10K" },
-  { name: "珠宝/饰品", short: "珠宝饰品", weights: [80, 75, 55, 70, 60, 85], gate: "审美种草", market: "800亿", growth: "15%", income: "4-12K" },
-  { name: "女性健康/保健品", short: "女性健康", weights: [70, 75, 50, 80, 80, 70], gate: "专业门槛", market: "3000亿", growth: "18%", income: "5-15K" },
-  { name: "职场工具/效率", short: "职场工具", weights: [60, 80, 90, 50, 85, 55], gate: "AI友好", market: "150亿", growth: "30%", income: "3-10K" },
-  { name: "个人成长/课程", short: "个人成长", weights: [80, 85, 70, 85, 75, 80], gate: "交付要求", market: "500亿", growth: "20%", income: "5-15K" },
-  { name: "亲子教育/玩具", short: "亲子教育", weights: [70, 70, 55, 75, 70, 85], gate: "场景信任", market: "500亿", growth: "12%", income: "4-10K" },
-  { name: "宠物用品（女性养宠）", short: "宠物用品", weights: [75, 60, 50, 60, 60, 80], gate: "情绪价值", market: "3000亿", growth: "15%", income: "3-8K" },
-  { name: "读书/知识付费", short: "读书知识", weights: [85, 80, 65, 70, 80, 75], gate: "内容沉淀", market: "500亿", growth: "22%", income: "3-10K" },
-  { name: "旅行/户外（女性向）", short: "旅行户外", weights: [80, 70, 60, 65, 60, 75], gate: "生活方式", market: "200亿", growth: "18%", income: "3-8K" },
-  { name: "茶饮/新式茶饮", short: "茶饮", weights: [80, 65, 55, 60, 65, 85], gate: "场景内容", market: "3000亿", growth: "15%", income: "3-8K" },
-  { name: "香薰/家居香氛", short: "香薰", weights: [75, 60, 50, 55, 60, 80], gate: "低门槛", market: "80亿", growth: "28%", income: "3-8K" },
-  { name: "内衣/贴身衣物", short: "内衣", weights: [70, 65, 50, 70, 60, 75], gate: "隐私信任", market: "1500亿", growth: "10%", income: "4-10K" },
-  { name: "银发经济（女性向）", short: "银发经济", weights: [65, 80, 55, 75, 70, 70], gate: "高增长", market: "1000亿", growth: "25%", income: "5-12K" },
-];
-
-const commercialQuestions = [
-  { dim: "内容能力", q: "当你需要公开表达一个观点时，你通常能做到什么程度？", options: ["能根据受众选择文字、图片或视频，并持续输出", "有一种较稳定的表达方式，基本能讲清楚", "偶尔能表达，但需要较多准备或协助", "主要依赖一对一沟通，很少公开表达"] },
-  { dim: "内容能力", q: "你曾经创造过被很多人看到的内容吗？", options: ["有，且多次获得超出预期的互动", "有一两次，感觉还不错", "没有特别印象，可能没有", "从来没认真做过内容"] },
-  { dim: "内容能力", q: "看到一个好的产品或服务，你会？", options: ["主动分享，还会附带使用感受", "私发给可能需要的朋友", "自己默默用，不主动分享", "没什么特别感觉"] },
-  { dim: "商业判断力", q: "看到一个新品类产品，你的第一反应是？", options: ["这个东西卖给谁，为什么有人会买", "这个东西有意思、好看或好用", "刷过去，没什么特别感觉", "不知道这是什么"] },
-  { dim: "商业判断力", q: "你有没有过早发现某个机会的经历？", options: ["有，后来验证了我的判断", "有，但没行动，后来别人做成了", "好像没有特别印象", "我对趋势不敏感"] },
-  { dim: "商业判断力", q: "你觉得女性创业最大的机会在哪里？", options: ["能说清具体赛道和原因", "有大概方向，但不确定", "觉得机会很多，不知道选哪个", "没想过这个问题"] },
-  { dim: "商业判断力", q: "看到一个品类，比如果酒，你怎么判断它值不值得做？", options: ["看市场规模、增速、竞争格局、消费者画像", "看身边有没有人在做、做得怎么样", "凭感觉判断好不好卖", "不懂怎么判断"] },
-  { dim: "AI工具熟练度", q: "你目前使用AI工具的频率是？", options: ["每天用，已经融入工作流程", "每周用几次，处理特定任务", "试用过，但没坚持下来", "没用过，不了解"] },
-  { dim: "AI工具熟练度", q: "用AI工具时，你的提示词水平是？", options: ["能写精准提示词，输出可直接用", "会改提示词，让输出更接近目标", "用默认对话，不会专门优化", "不知道提示词是什么"] },
-  { dim: "AI工具熟练度", q: "你认为AI对未来收入最大的影响是？", options: ["能具体说出如何提效或创造收入", "觉得重要，也在学习怎么用", "知道重要，但还没找到场景", "AI和我没关系"] },
-  { dim: "销售敏感度", q: "你有没有成功推荐过产品或服务给朋友？", options: ["有，不止一次，朋友会主动问我", "有一两次，感觉还不错", "没成功推荐过，但朋友会问建议", "没有推荐过，也不太好意思"] },
-  { dim: "销售敏感度", q: "如果有人对你的推荐提出异议，你会？", options: ["理解顾虑，并给出针对性回应", "解释产品价值，但说服力一般", "不知道怎么回应，可能不说了", "对方不买就算了"] },
-  { dim: "销售敏感度", q: "你觉得销售是什么？", options: ["帮对方解决问题，推荐适合的东西", "把产品卖出去，完成交易", "说服别人买他可能不需要的东西", "我不适合做销售"] },
-  { dim: "学习能力", q: "学一个新工具或新技能，你的方式是？", options: ["先上手用，边用边学，快速迭代", "先看教程或文档，理解后再上手", "需要有人教，跟着做", "学新东西对我来说很困难"] },
-  { dim: "学习能力", q: "过去一年，你主动学习过什么新东西？", options: ["有，且能说出学到什么、怎么用", "有开始学，但没坚持下来", "想学，但一直没开始", "过去一年没有主动学习"] },
-  { dim: "社交影响力", q: "你在朋友圈或社交媒体上的状态是？", options: ["经常有人评论、点赞、私信我", "有一定互动，但不是特别多", "偶尔发，互动很少", "不怎么发朋友圈或社交媒体"] },
-  { dim: "社交影响力", q: "如果朋友需要某个品类推荐，他们会想到你吗？", options: ["会，我在某些品类上有信任背书", "可能会，如果我想推荐的话", "不会特别想到我", "朋友不会找我推荐东西"] },
-];
-
-const aiQuestions = [
-  { area: "提示词库", q: "如果让你用AI搭建一条内容生产线，你现在的状态是？", options: ["已有固定提示词库，可以稳定产出内容", "会用AI写文案/做图，但流程还不稳定", "偶尔问AI几个问题，输出需要大量修改", "还不知道怎么把AI用到自己的生意里"] },
-  { area: "提示词库", q: "你是否会把高频任务整理成可复用的指令？", options: ["会，并按场景分类保存", "会保存少量常用指令", "偶尔复制别人的指令", "没有这个习惯"] },
-  { area: "内容生产", q: "用AI生成一篇小红书内容，你通常能做到？", options: ["选题、标题、正文、封面建议都能跑通", "能生成标题和正文，需要人工改很多", "只能让AI给一些灵感", "不知道怎么让AI写得像自己"] },
-  { area: "内容生产", q: "AI图片或视频工具在你的业务里处于什么位置？", options: ["已经用于日常素材生产", "偶尔用于封面或场景图", "试过但不稳定", "还没用过"] },
-  { area: "自动化流程", q: "你是否把多个工具串成过自动流程？", options: ["已经有自动化流程在跑", "搭过简单流程，但还不稳定", "知道概念，没真正做过", "完全不了解自动化"] },
-  { area: "自动化流程", q: "你处理客户咨询时，AI能帮到什么程度？", options: ["常见问题已能自动回复或半自动处理", "能帮我写回复，但需要手动复制", "偶尔用AI润色话术", "完全人工处理"] },
-  { area: "私域工具", q: "你的客户信息现在如何沉淀？", options: ["有标签、分层和跟进节奏", "有表格或工具记录一部分", "主要靠聊天记录和记忆", "还没有私域客户"] },
-  { area: "私域工具", q: "你是否有固定的话术库或案例库？", options: ["有，并能按场景快速调用", "有一些，但不系统", "零散存在聊天记录里", "没有"] },
-  { area: "数据复盘", q: "发布内容后，你会如何复盘？", options: ["看数据并调整选题、标题、发布时间", "大概看一下点赞评论", "只凭感觉判断好不好", "基本不复盘"] },
-  { area: "数据复盘", q: "如果要比较三个品类机会，你会怎么做？", options: ["用AI+数据工具做表格和结论", "手动搜资料再判断", "问朋友或看谁做得多", "不知道怎么比较"] },
-  { area: "工具成本", q: "面对一个新AI工具，你会先看什么？", options: ["它能替代哪个岗位或流程", "它是否好上手、是否便宜", "别人有没有推荐", "名字看起来熟不熟"] },
-  { area: "工具成本", q: "你现在最需要AI替你解决什么？", options: ["把重复工作变成流程", "提高内容产出速度", "帮我写文案和话术", "还不清楚自己的需求"] },
-];
-
-const dimensionMeta = {
-  内容能力: { full: 12, weight: 0.25 },
-  商业判断力: { full: 16, weight: 0.25 },
-  AI工具熟练度: { full: 12, weight: 0.15 },
-  销售敏感度: { full: 12, weight: 0.15 },
-  学习能力: { full: 8, weight: 0.1 },
-  社交影响力: { full: 8, weight: 0.1 },
-};
+import { aiToolCatalog, toolsByIds, toolsForArea } from "./aiTools.js";
+import {
+  buildBespokeRoute,
+  buildCategoryRationales,
+  getAiSolution,
+  getLevelGrowthPlan,
+} from "./resultLogic.js";
 
 const stepLabels = [
   { key: "business", label: "商业潜力测评", desc: "17题六维能力" },
@@ -118,12 +56,9 @@ const stepLabels = [
   { key: "card", label: "OPC定位卡", desc: "合成最终画像" },
 ];
 
-const ADMIN_SESSION_KEY = "opc-admin-session";
 const ADMIN_RECORDS_KEY = "opc-admin-records";
-const ADMIN_ACCESS_KEY = "opc-admin-access-key";
 const LEAD_INFO_KEY = "opc-lead-info";
 const PENDING_ASSESSMENT_KEY = "opc-pending-assessment";
-const DEFAULT_ADMIN_PASSWORD = "opc2026";
 
 const assessmentMeta = {
   business: {
@@ -158,6 +93,12 @@ const assessmentMeta = {
   },
 };
 
+const assessmentSharePaths = {
+  business: "/商业测评.html",
+  ai: "/AI工具测评.html",
+  opc: "/OPC定位卡.html",
+};
+
 const viewPaths = {
   home: "/",
   "business-intro": assessmentMeta.business.path,
@@ -168,14 +109,29 @@ const viewPaths = {
   "ai-result": `${assessmentMeta.ai.path}/result`,
   "opc-intro": assessmentMeta.opc.path,
   card: `${assessmentMeta.opc.path}/result`,
+  "ai-tools": "/ai-tools",
   login: "/login",
   account: "/account",
   "admin-login": "/admin/login",
   admin: "/admin",
 };
 
+const viewAliases = {
+  "/商业测评.html": "business-intro",
+  "/AI工具测评.html": "ai-intro",
+  "/OPC定位卡.html": "opc-intro",
+  "/AI工具推荐.html": "ai-tools",
+};
+
 function viewFromPath(pathname) {
-  const normalized = pathname !== "/" ? pathname.replace(/\/+$/, "") : pathname;
+  let decodedPath = pathname;
+  try {
+    decodedPath = decodeURI(pathname);
+  } catch {
+    decodedPath = pathname;
+  }
+  const normalized = decodedPath !== "/" ? decodedPath.replace(/\/+$/, "") : decodedPath;
+  if (viewAliases[normalized]) return viewAliases[normalized];
   const match = Object.entries(viewPaths).find(([, path]) => path === normalized);
   if (!match) return "home";
   if (["business", "business-result", "ai", "ai-result", "card"].includes(match[0])) {
@@ -258,7 +214,6 @@ const sampleAdminRecords = [
 ];
 
 const adminStatuses = ["待跟进", "待分配", "已联系", "已转化", "已归档"];
-const adminOwners = ["未分配", "Mia", "Nora", "Luna", "Yvonne"];
 const adminMetricFilters = {
   all: { label: "用户记录" },
   intent: { label: "高意向用户" },
@@ -390,15 +345,6 @@ function hasLeadInfo(info) {
   return !validateLeadInfo(info);
 }
 
-function getAdminAccessKey() {
-  if (typeof window === "undefined") return DEFAULT_ADMIN_PASSWORD;
-  try {
-    return window.localStorage.getItem(ADMIN_ACCESS_KEY) || DEFAULT_ADMIN_PASSWORD;
-  } catch {
-    return DEFAULT_ADMIN_PASSWORD;
-  }
-}
-
 async function requestJson(path, options = {}) {
   const response = await fetch(path, {
     credentials: "same-origin",
@@ -471,7 +417,7 @@ async function fetchUserRecords() {
 
 async function shareAssessment(type, setFeedback) {
   const meta = assessmentMeta[type];
-  const url = new URL(meta.path, window.location.origin).toString();
+  const url = new URL(assessmentSharePaths[type] || meta.path, window.location.origin).toString();
   try {
     if (navigator.share) {
       await navigator.share({ title: `她智汇｜${meta.title}`, text: meta.description, url });
@@ -486,23 +432,56 @@ async function shareAssessment(type, setFeedback) {
 }
 
 async function fetchAdminRecords() {
-  const payload = await requestJson("/api/records", {
-    headers: { "x-admin-key": getAdminAccessKey() },
-  });
+  const payload = await requestJson("/api/records");
   return Array.isArray(payload.records) ? payload.records : [];
 }
 
 async function loginAdmin(account, password) {
-  return requestJson("/api/admin/login", {
+  const payload = await requestJson("/api/admin/login", {
     method: "POST",
     body: JSON.stringify({ account, password }),
   });
+  return payload.admin;
+}
+
+async function fetchCurrentAdmin() {
+  const payload = await requestJson("/api/admin/me");
+  return payload.admin ?? null;
+}
+
+async function logoutAdmin() {
+  return requestJson("/api/admin/logout", { method: "POST", body: "{}" });
+}
+
+async function fetchAdminUsers() {
+  const payload = await requestJson("/api/admin/users");
+  return Array.isArray(payload.users) ? payload.users : [];
+}
+
+async function fetchAdvisors() {
+  const payload = await requestJson("/api/admin/advisors");
+  return Array.isArray(payload.advisors) ? payload.advisors : [];
+}
+
+async function createAdvisor(form) {
+  const payload = await requestJson("/api/admin/advisors", {
+    method: "POST",
+    body: JSON.stringify(form),
+  });
+  return payload.advisor;
+}
+
+async function setAdvisorActive(id, active) {
+  const payload = await requestJson(`/api/admin/advisors/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ active }),
+  });
+  return payload.advisor;
 }
 
 async function updateAdminRecord(id, patch) {
   const payload = await requestJson(`/api/records/${encodeURIComponent(id)}`, {
     method: "PATCH",
-    headers: { "x-admin-key": getAdminAccessKey() },
     body: JSON.stringify(patch),
   });
   return payload.record;
@@ -511,7 +490,6 @@ async function updateAdminRecord(id, patch) {
 async function deleteAdminRecord(id) {
   return requestJson(`/api/records/${encodeURIComponent(id)}`, {
     method: "DELETE",
-    headers: { "x-admin-key": getAdminAccessKey() },
   });
 }
 
@@ -560,15 +538,6 @@ const dimensionInsightCopy = {
   },
 };
 
-const aiActionCopy = {
-  提示词库: "把选题、标题、产品卖点、私域话术整理成四套固定提示词。",
-  内容生产: "先做7天内容流水线：选题、脚本、封面、发布节奏各一套模板。",
-  自动化流程: "从咨询回复和资料整理开始，先串起一个低成本半自动流程。",
-  私域工具: "建立客户标签、跟进节奏和成交记录，让每一次沟通可复盘。",
-  数据复盘: "每周用数据表比较选题、互动和转化，把感觉变成判断依据。",
-  工具成本: "先保留少数核心工具，按替代流程而不是新鲜感决定是否付费。",
-};
-
 function scoreTier(score) {
   if (score >= 82) return { label: "核心优势", tone: "strong" };
   if (score >= 68) return { label: "可放大", tone: "good" };
@@ -597,54 +566,6 @@ function buildDimensionReport(business) {
     .sort((a, b) => b.score - a.score);
 }
 
-function buildCategoryRationales(business, ai) {
-  return business.recommendedCategories.map((category, index) => {
-    const drivers = dimensions
-      .map((dimension, dimIndex) => ({
-        dimension,
-        contribution: Math.round((business.percentScores[dimension] / 100) * category.weights[dimIndex]),
-      }))
-      .sort((a, b) => b.contribution - a.contribution)
-      .slice(0, 2);
-    return {
-      ...category,
-      rank: index + 1,
-      drivers,
-      reason: `${drivers.map((item) => item.dimension).join(" + ")}贡献最高，与你当前的${business.strongestDim}优势相连；先补${ai.weakest}，更容易把种草、承接和成交串成闭环。`,
-    };
-  });
-}
-
-function buildBespokeRoute(business, ai) {
-  const primary = business.recommendedCategories[0];
-  return [
-    {
-      period: "第1周",
-      title: "定位校准",
-      text: `以${primary.name}作为主攻方向，拆出1类核心人群、3个高频场景和1个可验证卖点。`,
-      output: "人群画像 + 首批选题",
-    },
-    {
-      period: "第2周",
-      title: "信任资产",
-      text: `放大${business.strongestDim}，把你的经验、审美或判断转成可连续发布的内容栏目。`,
-      output: "10篇内容 + 3个案例",
-    },
-    {
-      period: "第3周",
-      title: "AI流程补齐",
-      text: `${aiActionCopy[ai.weakest]}重点让${ai.weakest}不再靠临时发挥。`,
-      output: "提示词库 + SOP",
-    },
-    {
-      period: "第4周",
-      title: "首单验证",
-      text: `围绕${primary.gate}门槛做一次小单测试，用咨询量、转化率和复购意愿决定是否加码。`,
-      output: "首单复盘 + 升级路径",
-    },
-  ];
-}
-
 function AppHeader({ view, onNavigate, adminLoggedIn, currentUser }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const nav = [
@@ -652,9 +573,12 @@ function AppHeader({ view, onNavigate, adminLoggedIn, currentUser }) {
     ["business-intro", "商业测评"],
     ["ai-intro", "AI工具测评"],
     ["opc-intro", "OPC定位"],
+    ["ai-tools", "AI工具库"],
   ];
 
-  const activeNav = view.startsWith("business")
+  const activeNav = view === "ai-tools"
+    ? "ai-tools"
+    : view.startsWith("business")
     ? "business-intro"
     : view.startsWith("ai")
       ? "ai-intro"
@@ -987,12 +911,62 @@ function UserAccountPage({ currentUser, onNavigate, onLogout }) {
                   <details className="account-record-detail">
                     <summary>查看详细结果</summary>
                     {record.businessResult && <><p><strong>商业总分</strong>{record.businessResult.totalScore} / 100</p><p><strong>最强维度</strong>{record.businessResult.strongestDim}</p><p><strong>Top3赛道</strong>{record.businessResult.recommendedCategories?.map((item) => `${item.short} ${item.match}%`).join(" · ")}</p></>}
-                    {record.aiResult && <><p><strong>AI总分</strong>{record.aiResult.total} / 100</p><p><strong>最强能力</strong>{record.aiResult.strongest}</p><p><strong>优先短板</strong>{record.aiResult.weakest}</p></>}
+                    {record.assessmentType === "opc" && !record.reportUnlocked ? (
+                      <div className="account-report-locked"><LockKey size={18} /><span>完整能力图、AI解决方案和30天路径尚未开放。添加微信 <strong>Her-AICircle</strong> 获取解读。</span></div>
+                    ) : record.aiResult && <><p><strong>AI总分</strong>{record.aiResult.total} / 100</p><p><strong>最强能力</strong>{record.aiResult.strongest}</p><p><strong>优先短板</strong>{record.aiResult.weakest}</p></>}
                   </details>
                 )}
               </article>
             );
           })}
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function AiToolsPage({ onNavigate }) {
+  const [activeArea, setActiveArea] = useState("全部");
+  const areas = ["全部", "提示词库", "内容生产", "自动化流程", "私域工具", "数据复盘", "工具成本"];
+  const tools = activeArea === "全部" ? aiToolCatalog : toolsForArea(activeArea);
+
+  function downloadToolGuide() {
+    const headings = ["工具", "提供方", "适用环节", "推荐理由", "官方链接"];
+    const rows = tools.map((tool) => [tool.name, tool.provider, tool.areas.join(" / "), tool.description, tool.url]);
+    const csv = [headings, ...rows]
+      .map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(","))
+      .join("\n");
+    const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `她智汇-AI工具清单-${activeArea}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <main className="page-shell ai-tool-library-shell">
+      <section className="ai-tool-library-hero">
+        <button className="entry-back" type="button" onClick={() => onNavigate("ai-intro")}><ArrowLeft size={17} />返回AI测评</button>
+        <span className="document-kicker">CURATED AI TOOL LIBRARY</span>
+        <h1>把工具放进流程，<br />而不是放进收藏夹。</h1>
+        <p>按六项AI能力整理的官方工具入口。先解决一个明确短板，再增加新的订阅。</p>
+        <button className="ai-tool-download" type="button" onClick={downloadToolGuide}><DownloadSimple size={18} />下载当前工具清单</button>
+      </section>
+      <section className="ai-tool-library-content">
+        <div className="ai-tool-area-tabs" role="tablist" aria-label="按AI能力筛选工具">
+          {areas.map((area) => <button className={activeArea === area ? "active" : ""} type="button" role="tab" aria-selected={activeArea === area} onClick={() => setActiveArea(area)} key={area}>{area}</button>)}
+        </div>
+        <div className="ai-tool-card-grid">
+          {tools.map((tool, index) => (
+            <article className="ai-tool-card" key={tool.id}>
+              <div><span>{String(index + 1).padStart(2, "0")}</span><small>{tool.tag}</small></div>
+              <h2>{tool.name}</h2>
+              <p>{tool.description}</p>
+              <div className="ai-tool-card-meta"><span>{tool.provider}</span><span>{tool.access}</span></div>
+              <a href={tool.url} target="_blank" rel="noreferrer">打开官方入口 <ArrowRight size={16} /></a>
+            </article>
+          ))}
         </div>
       </section>
     </main>
@@ -1143,7 +1117,16 @@ function HomePage({ setView, onStart, businessResult }) {
             查看你的赛道建议 <ArrowRight size={16} />
           </button>
         </div>
-        <CategoryGrid />
+        <div className="taxonomy-board">
+          <div className="taxonomy-board-head">
+            <div>
+              <span>SELECT YOUR CATEGORY</span>
+              <h3>18个赛道，全景候选池</h3>
+            </div>
+            <p>能力权重 × 市场机会 × 启动门槛</p>
+          </div>
+          <CategoryGrid />
+        </div>
       </section>
     </main>
   );
@@ -1478,10 +1461,14 @@ function CategoryGrid() {
   return (
     <div className="category-grid" aria-label="18个女性赛道">
       {categoryWeights.map((category, index) => (
-        <button type="button" key={category.name}>
+        <article key={category.name}>
           <span>{String(index + 1).padStart(2, "0")}</span>
-          <strong>{category.short}</strong>
-        </button>
+          <div>
+            <strong>{category.short}</strong>
+            <small>{category.gate} · {category.market}</small>
+          </div>
+          <em><b>{category.growth}</b> 增速</em>
+        </article>
       ))}
     </div>
   );
@@ -1560,6 +1547,7 @@ function BusinessStandaloneResult({ businessResult, answers, sessionRecordId, le
 
 function AiStandaloneResult({ aiResult, answers, sessionRecordId, leadInfo, setView }) {
   const ai = aiResult ?? calculateAi(fallbackAnswers(aiQuestions));
+  const aiSolution = getAiSolution(ai.weakest);
   const [saveState, setSaveState] = useState("正在保存");
   const [shareFeedback, setShareFeedback] = useState("");
   const savedKey = useRef("");
@@ -1590,7 +1578,7 @@ function AiStandaloneResult({ aiResult, answers, sessionRecordId, leadInfo, setV
           ))}
         </div>
       </section>
-      <section className="ai-action-prescription"><span>02 · FIRST ACTION</span><h2>先从{ai.weakest}开始</h2><p>{aiActionCopy[ai.weakest]}把这一步做成固定动作，再增加新的AI工具。</p><div><strong>本周建议</strong><span>选择一个重复频率最高的任务，保留输入、提示词、输出和修改记录，连续复用三次。</span></div></section>
+      <section className="ai-action-prescription"><span>02 · SOLUTION</span><h2>{aiSolution.title}</h2><p>{aiSolution.summary}</p><div><strong>本周建议</strong><span>{aiSolution.action}</span></div><button type="button" onClick={() => setView("ai-tools")}>查看{ai.weakest}工具方案 <ArrowRight size={17} /></button></section>
       <StandaloneResultActions type="ai" shareFeedback={shareFeedback} setShareFeedback={setShareFeedback} onAccount={() => setView("account")} onRestart={() => setView("ai-intro")} />
     </main>
   );
@@ -1853,7 +1841,9 @@ function MobilePositioningReport({
   onCopy,
   onDownload,
   onRestart,
-  onAiAssessment,
+  onAiTools,
+  onOpenInsight,
+  reportUnlocked,
 }) {
   const weakestAreas = [...ai.areas]
     .sort((left, right) => ai.percent[left] - ai.percent[right])
@@ -1931,6 +1921,7 @@ function MobilePositioningReport({
         </div>
       </section>
 
+      {reportUnlocked ? <>
       <section className="mobile-report-band mobile-dimension-ledger">
         <div className="mobile-report-section-head">
           <span>02</span>
@@ -2008,12 +1999,22 @@ function MobilePositioningReport({
         ))}
         </div>
       </section>
+      </> : (
+        <section className="mobile-report-access-gate">
+          <span>PRIVATE INTERPRETATION</span>
+          <LockKey size={28} weight="thin" />
+          <h2>完整商业解读待开放</h2>
+          <p>六维能力图、AI解决方案、Top3依据和30天路径将由顾问结合你的状态开放。</p>
+          <button type="button" onClick={onOpenInsight}>查看开放方式 <ArrowRight size={17} /></button>
+          <small>微信 · Her-AICircle</small>
+        </section>
+      )}
 
       <section className="mobile-report-actions">
         <span>TURN POSITIONING INTO ACTION</span>
         <h2>把定位变成第一步</h2>
-        <button type="button" onClick={onAiAssessment}>
-          继续AI工具测评 <ArrowRight size={18} />
+        <button type="button" onClick={reportUnlocked ? onAiTools : onOpenInsight}>
+          {reportUnlocked ? "查看AI工具方案" : "申请开放完整解读"} <ArrowRight size={18} />
         </button>
         <button className="mobile-report-link" type="button" onClick={onDownload}>
           生成分享图
@@ -2030,20 +2031,55 @@ function MobilePositioningReport({
   );
 }
 
+function ReportAccessDialog({ open, unlocked, checking, business, aiSolution, onClose, onRefresh }) {
+  if (!open) return null;
+  const report = buildDimensionReport(business);
+  return (
+    <div className="report-access-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section className="report-access-dialog" role="dialog" aria-modal="true" aria-labelledby="report-access-title">
+        <button className="report-dialog-close" type="button" onClick={onClose} aria-label="关闭"><X size={20} /></button>
+        {unlocked ? <>
+          <span className="document-kicker">CAPABILITY INTERPRETATION</span>
+          <h2 id="report-access-title">六维能力详情</h2>
+          <div className="report-dialog-grid">
+            <RadarChart scores={business.percentScores} mobile />
+            <div className="report-dialog-dimensions">
+              {report.map((item) => <div key={item.dimension}><span><strong>{item.dimension}</strong><small>{item.tier.label}</small></span><i><b style={{ width: `${item.score}%` }} /></i><em>{item.score}</em></div>)}
+            </div>
+          </div>
+          <article className="report-dialog-solution"><span>AI解决方案</span><strong>{aiSolution.title}</strong><p>{aiSolution.summary}</p></article>
+        </> : <>
+          <span className="document-kicker">PRIVATE INTERPRETATION</span>
+          <LockKey className="report-lock-icon" size={34} weight="thin" />
+          <h2 id="report-access-title">完整能力解读尚未开放</h2>
+          <p>顾问会结合你的商业等级、Top3赛道和AI短板开放完整能力图与行动方案。</p>
+          <div className="report-contact-card"><span>添加解读顾问微信</span><strong>Her-AICircle</strong><small>备注：OPC定位卡 + 你的姓名</small></div>
+          <button className="report-refresh-access" type="button" onClick={onRefresh} disabled={checking}>{checking ? "正在检查权限" : "我已联系，刷新开放状态"}</button>
+        </>}
+      </section>
+    </div>
+  );
+}
+
 function PositioningCard({ businessResult, aiResult, setView, sessionRecordId, leadInfo, businessAnswers, aiAnswers }) {
   const business = businessResult ?? calculateBusiness(fallbackAnswers(commercialQuestions));
   const ai = aiResult ?? calculateAi(fallbackAnswers(aiQuestions));
+  const isDemoReport = !businessResult || !aiResult;
   const [copied, setCopied] = useState(false);
   const [insightOpen, setInsightOpen] = useState(false);
+  const [reportUnlocked, setReportUnlocked] = useState(isDemoReport);
+  const [accessChecking, setAccessChecking] = useState(false);
   const savedRecordKey = useRef("");
   const top = business.recommendedCategories;
   const primaryCategory = top[0];
-  const isDemoReport = !businessResult || !aiResult;
   const profileName = isDemoReport ? "林然" : leadInfo?.name || "当前访客";
   const profileInitial = profileName.slice(0, 1) || "她";
   const dimensionReport = buildDimensionReport(business);
   const categoryRationales = buildCategoryRationales(business, ai);
   const bespokeRoute = buildBespokeRoute(business, ai);
+  const aiSolution = getAiSolution(ai.weakest);
+  const growthPlan = getLevelGrowthPlan(business.level.level);
+  const recommendedTools = toolsByIds(aiSolution.toolIds);
   const shareText = `我刚测了OPC商业定位，结果是${business.level.level}${business.level.name}。最推荐我从${top[0].name}切入，AI工具短板是${ai.weakest}。`;
 
   useEffect(() => {
@@ -2058,10 +2094,23 @@ function PositioningCard({ businessResult, aiResult, setView, sessionRecordId, l
       ai,
       businessAnswers,
       aiAnswers,
-    }).catch(() => {
-      savedRecordKey.current = "";
-    });
+    })
+      .then((savedRecord) => setReportUnlocked(Boolean(savedRecord?.reportUnlocked)))
+      .catch(() => {
+        savedRecordKey.current = "";
+      });
   }, [ai, aiAnswers, business, businessAnswers, isDemoReport, leadInfo, sessionRecordId]);
+
+  async function refreshReportAccess() {
+    setAccessChecking(true);
+    try {
+      const records = await fetchUserRecords();
+      const record = records.find((item) => item.id === sessionRecordId);
+      setReportUnlocked(Boolean(record?.reportUnlocked));
+    } finally {
+      setAccessChecking(false);
+    }
+  }
 
   async function copyShareText() {
     try {
@@ -2092,7 +2141,7 @@ function PositioningCard({ businessResult, aiResult, setView, sessionRecordId, l
     ctx.fillText(`她信分 ${creditScore(business)} · 商业测评 ${business.totalScore}分`, 150, 190);
     ctx.fillText(`推荐品类：${top.map((item) => `${item.short} ${item.match}%`).join(" / ")}`, 56, 270);
     ctx.fillText(`AI工具短板：${ai.weakest}`, 56, 320);
-    ctx.fillText("下一步：申请OPC孵化营，4周从品类分析到首单交付", 56, 370);
+    ctx.fillText(`下一步：${growthPlan.objective}${growthPlan.next ? `，目标${growthPlan.next}` : ""}`, 56, 370);
     ctx.fillStyle = "#C9A96E";
     ctx.fillRect(56, 424, 788, 2);
     ctx.font = "italic 500 28px 'STXingkai', 'KaiTi', cursive";
@@ -2124,12 +2173,14 @@ function PositioningCard({ businessResult, aiResult, setView, sessionRecordId, l
         onCopy={copyShareText}
         onDownload={downloadShareImage}
         onRestart={() => setView("business")}
-        onAiAssessment={() => setView("ai")}
+        onAiTools={() => setView("ai-tools")}
+        onOpenInsight={() => setInsightOpen(true)}
+        reportUnlocked={reportUnlocked}
       />
       <section className="card-title-row">
         <div>
           <span className="document-kicker">PERSONAL OPC POSITIONING CARD</span>
-          <h1>个人OPC定位卡</h1>
+          <h2 className="card-page-title">个人OPC定位卡</h2>
           <p>{isDemoReport ? "当前为样例报告；完成两项测评后，会替换为你的专属计算结果。" : "基于你的题目答案，商业等级、推荐品类、AI工具短板和下一步路径已经生成。"}</p>
         </div>
         <button className="ghost-btn" type="button" onClick={() => setView("business")}>重新测评</button>
@@ -2145,7 +2196,7 @@ function PositioningCard({ businessResult, aiResult, setView, sessionRecordId, l
                 <p>{business.level.level} · {business.level.name}</p>
               </div>
             </div>
-            <blockquote>你已经具备发现机会和动手搭建的能力，下一步是把内容、销售、交付变成可复用流程。</blockquote>
+            <blockquote>{business.level.desc}</blockquote>
             <div className="metric-grid slim">
               <Metric label="她信分" value={creditScore(business)} />
               <Metric label="商业测评" value={`${business.totalScore}分`} />
@@ -2159,20 +2210,19 @@ function PositioningCard({ businessResult, aiResult, setView, sessionRecordId, l
             </div>
             <div className="profile-facts">
               <div><span>OPC等级</span><strong>{business.level.level} · {business.level.name}</strong></div>
-              <div><span>品类专精</span><strong>{top[0].short} L7 · 深度</strong></div>
-              <div><span>月GMV潜力</span><strong>¥8,000+</strong></div>
+              <div><span>品类匹配</span><strong>{top[0].short} · {top[0].match}%</strong></div>
+              <div><span>下一等级</span><strong>{growthPlan.next || "长期影响力"}</strong></div>
             </div>
           </div>
 
           <div className="radar-column">
             <h2>六维能力维度</h2>
-            <RadarChart scores={business.percentScores} />
-            <p className="sr-only">
-              六维能力分数：
-              {dimensions.map((dimension) => `${dimension}${business.percentScores[dimension]}分`).join("，")}。
-            </p>
-            <button className="ghost-btn compact-ghost" type="button" onClick={() => setInsightOpen(!insightOpen)}>
-              查看能力详情 <ArrowRight size={16} />
+            {reportUnlocked ? <>
+              <RadarChart scores={business.percentScores} />
+              <p className="sr-only">六维能力分数：{dimensions.map((dimension) => `${dimension}${business.percentScores[dimension]}分`).join("，")}。</p>
+            </> : <div className="radar-locked-preview"><LockKey size={30} weight="thin" /><strong>完整能力图待开放</strong><span>顾问解读后可查看六维分数</span></div>}
+            <button className="ghost-btn compact-ghost" type="button" onClick={() => setInsightOpen(true)}>
+              {reportUnlocked ? "查看能力详情" : "申请开放详情"} <ArrowRight size={16} />
             </button>
           </div>
 
@@ -2185,34 +2235,34 @@ function PositioningCard({ businessResult, aiResult, setView, sessionRecordId, l
                 <strong>{category.match}%</strong>
               </div>
             ))}
-            <div className="mini-insights">
+            {reportUnlocked ? <div className="mini-insights">
               <InsightCard title="卡在哪里" text={`内容能做出来，但${ai.weakest}还没有形成可复用流程。`} />
               <InsightCard title="价值所在" text={`${business.strongestDim}突出，适合先从${top[0].name}跑通首单。`} />
-            </div>
+            </div> : <p className="top3-locked-note"><LockKey size={15} /> 推荐依据和短板分析待开放</p>}
           </div>
 
-          <div className="ai-tool-row">
+          {reportUnlocked ? <div className="ai-tool-row">
             <div>
               <span>AI工具短板</span>
               <strong>{ai.weakest}</strong>
-              <small>自动化流程待建立</small>
+              <small>解决方案 · {aiSolution.title}</small>
             </div>
             <div>
               <span>AI工具推荐</span>
-              <strong>ChatGPT · Canva · 剪映 · 微伴助手</strong>
-              <small>优先使用</small>
+              <strong>{recommendedTools.map((tool) => tool.name).join(" · ")}</strong>
+              <button type="button" onClick={() => setView("ai-tools")}>查看官方入口 <ArrowRight size={14} /></button>
             </div>
-          </div>
+          </div> : <button className="ai-tool-locked-row" type="button" onClick={() => setInsightOpen(true)}><LockKey size={20} /><span><strong>AI解决方案待开放</strong><small>根据{ai.weakest}生成专属工具组合</small></span><ArrowRight size={17} /></button>}
         </section>
 
         <aside className="action-column">
-          <article className="path-card">
+          {reportUnlocked ? <article className="path-card">
             <h2>下一步行动路径</h2>
             <div className="path-icons">
-              {["申请OPC孵化营", "4周品类分析", "首单交付", "升级L6"].map((item) => <span key={item}>{item}</span>)}
+              {growthPlan.steps.map((item) => <span key={item}>{item}</span>)}
             </div>
-            <p>建议在30天内完成首单验证，进入价值验证者阶段（L6）。</p>
-          </article>
+            <p>{growthPlan.objective}{growthPlan.next ? `，完成后向${growthPlan.next}升级。` : "。"}</p>
+          </article> : <article className="path-card path-card-locked"><LockKey size={26} weight="thin" /><h2>成长路径待开放</h2><p>当前等级为{business.level.level}，开放后将显示与你等级对应的下一阶段目标。</p><button type="button" onClick={() => setInsightOpen(true)}>查看开放方式</button></article>}
           <button className="action-tile" type="button" onClick={downloadShareImage}>
             <DownloadSimple size={34} weight="duotone" />
             <strong>生成分享图</strong>
@@ -2223,14 +2273,15 @@ function PositioningCard({ businessResult, aiResult, setView, sessionRecordId, l
             <strong>{copied ? "分享文案已复制" : "复制分享文案"}</strong>
             <span>专属分享文案</span>
           </button>
-          <button className="action-tile" type="button">
+          <button className="action-tile" type="button" onClick={() => setView("ai-tools")}>
             <Target size={34} weight="duotone" />
-            <strong>领取品类快照</strong>
-            <span>18品类趋势卡片</span>
+            <strong>AI工具方案</strong>
+            <span>按短板查看官方入口</span>
           </button>
         </aside>
       </section>
 
+      {reportUnlocked ? <>
       <section className="bespoke-route-section" aria-label="高端定制路线">
         <div className="bespoke-intro">
           <span className="document-kicker">BESPOKE OPC ROADMAP</span>
@@ -2276,7 +2327,7 @@ function PositioningCard({ businessResult, aiResult, setView, sessionRecordId, l
           <article>
             <span>02</span>
             <strong>18品类权重匹配</strong>
-            <p>每个女性赛道都有独立六维权重，按基础匹配、优势共振和短板风险计算后排序。</p>
+            <p>每个女性赛道都有独立的六维权重；系统将你的六维百分比分别乘以赛道权重，除以该赛道权重总和后排序。</p>
             <em>{primaryCategory.name} · {primaryCategory.match}%</em>
           </article>
           <article>
@@ -2354,11 +2405,27 @@ function PositioningCard({ businessResult, aiResult, setView, sessionRecordId, l
           </ol>
         </div>
       </section>
+      </> : (
+        <section className="desktop-report-access-gate">
+          <div><span className="document-kicker">PRIVATE INTERPRETATION</span><h2>你的基础定位已经生成</h2><p>完整六维能力、AI解决方案、Top3计算依据与30天成长路径将在顾问开放后显示。</p></div>
+          <button type="button" onClick={() => setInsightOpen(true)}><LockKey size={20} />申请开放完整解读 <ArrowRight size={17} /></button>
+          <small>微信 · Her-AICircle</small>
+        </section>
+      )}
+      <ReportAccessDialog
+        open={insightOpen}
+        unlocked={reportUnlocked}
+        checking={accessChecking}
+        business={business}
+        aiSolution={aiSolution}
+        onClose={() => setInsightOpen(false)}
+        onRefresh={refreshReportAccess}
+      />
     </main>
   );
 }
 
-function AdminLogin({ setView, setAdminLoggedIn }) {
+function AdminLogin({ setView, onAuthenticated }) {
   const [form, setForm] = useState({ account: "", password: "" });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -2369,29 +2436,11 @@ function AdminLogin({ setView, setAdminLoggedIn }) {
     setSubmitting(true);
     setError("");
     try {
-      await loginAdmin(account, form.password);
-      try {
-        window.localStorage.setItem(ADMIN_SESSION_KEY, "true");
-        window.localStorage.setItem(ADMIN_ACCESS_KEY, form.password);
-      } catch {
-        // If storage is unavailable, keep the session for this render tree.
-      }
-      setAdminLoggedIn(true);
+      const admin = await loginAdmin(account, form.password);
+      onAuthenticated(admin);
       setView("admin");
-      return;
-    } catch {
-      if (account === "admin" && form.password === DEFAULT_ADMIN_PASSWORD) {
-        try {
-          window.localStorage.setItem(ADMIN_SESSION_KEY, "true");
-          window.localStorage.setItem(ADMIN_ACCESS_KEY, form.password);
-        } catch {
-          // If storage is unavailable, keep the session for this render tree.
-        }
-        setAdminLoggedIn(true);
-        setView("admin");
-        return;
-      }
-      setError("账号或密码不正确。演示账号为 admin / opc2026。");
+    } catch (requestError) {
+      setError(requestError.message || "账号或密码不正确。");
     } finally {
       setSubmitting(false);
     }
@@ -2401,8 +2450,8 @@ function AdminLogin({ setView, setAdminLoggedIn }) {
     <main className="page-shell admin-shell admin-login-shell" style={{ "--admin-wave-bg": `url(${fruitWineWave})` }}>
       <section className="admin-login-card" aria-labelledby="admin-login-title">
         <span className="document-kicker">ADMIN ACCESS</span>
-        <h1 id="admin-login-title">管理员登录</h1>
-        <p>查看用户测评记录、跟进状态和品类意向，适合做线索管理和运营复盘。</p>
+        <h1 id="admin-login-title">管理工作台</h1>
+        <p>超级管理员查看全量数据并分配顾问；顾问仅查看分配给自己的用户。</p>
         <form className="admin-login-form" onSubmit={handleSubmit}>
           <label>
             <span>管理员账号</span>
@@ -2410,7 +2459,7 @@ function AdminLogin({ setView, setAdminLoggedIn }) {
               autoComplete="username"
               value={form.account}
               onChange={(event) => setForm({ ...form, account: event.target.value })}
-              placeholder="admin"
+              placeholder="管理员或顾问账号"
             />
           </label>
           <label>
@@ -2420,7 +2469,7 @@ function AdminLogin({ setView, setAdminLoggedIn }) {
               type="password"
               value={form.password}
               onChange={(event) => setForm({ ...form, password: event.target.value })}
-              placeholder="opc2026"
+              placeholder="请输入密码"
             />
           </label>
           {error && <p className="admin-error" role="alert">{error}</p>}
@@ -2428,17 +2477,21 @@ function AdminLogin({ setView, setAdminLoggedIn }) {
             {submitting ? "正在验证" : "进入管理后台"} <ShieldCheck size={18} />
           </button>
         </form>
-        <div className="admin-demo-note">
-          <span>演示账号</span>
-          <strong>admin / opc2026</strong>
-        </div>
+        <div className="admin-demo-note"><ShieldCheck size={17} /><span>安全会话将在30天后自动失效</span></div>
       </section>
     </main>
   );
 }
 
-function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
+function AdminDashboard({ adminUser, setAdminUser, setView }) {
+  const adminLoggedIn = Boolean(adminUser);
+  const isSuperAdmin = adminUser?.role === "superadmin";
   const [records, setRecords] = useState(() => readAdminRecords());
+  const [users, setUsers] = useState([]);
+  const [advisors, setAdvisors] = useState([]);
+  const [advisorForm, setAdvisorForm] = useState({ name: "", account: "", password: "" });
+  const [advisorState, setAdvisorState] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState("");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("全部");
   const [ownerFilter, setOwnerFilter] = useState("全部顾问");
@@ -2458,10 +2511,16 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
     async function loadRecords() {
       setLoading(true);
       try {
-        const remoteRecords = await fetchAdminRecords();
+        const [remoteRecords, remoteUsers, remoteAdvisors] = await Promise.all([
+          fetchAdminRecords(),
+          fetchAdminUsers(),
+          isSuperAdmin ? fetchAdvisors() : Promise.resolve([]),
+        ]);
         if (!active) return;
         const nextRecords = remoteRecords.length ? remoteRecords : readAdminRecords();
         setRecords(nextRecords);
+        setUsers(remoteUsers);
+        setAdvisors(remoteAdvisors);
         setSelectedId((current) => current || nextRecords[0]?.id || "");
         setRemoteError("");
       } catch {
@@ -2474,7 +2533,12 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
     return () => {
       active = false;
     };
-  }, [adminLoggedIn]);
+  }, [adminLoggedIn, isSuperAdmin]);
+
+  const legacyOwners = [...new Set(records.map((record) => record.owner).filter((owner) => owner && owner !== "未分配"))];
+  const ownerOptions = isSuperAdmin
+    ? [...new Set(["未分配", ...advisors.filter((advisor) => advisor.active).map((advisor) => advisor.name), ...legacyOwners])]
+    : [adminUser?.name].filter(Boolean);
 
   const filteredRecords = useMemo(() => {
     const keyword = query.trim().toLowerCase();
@@ -2485,6 +2549,7 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
         || (activeMetric === "converted" && record.status === "已转化");
       const statusMatch = statusFilter === "全部" || record.status === statusFilter;
       const ownerMatch = ownerFilter === "全部顾问" || record.owner === ownerFilter;
+      const userMatch = !selectedUserId || users.find((user) => user.id === selectedUserId)?.recordIds.includes(record.id);
       const keywordMatch = !keyword || [
         record.name,
         record.phone,
@@ -2494,11 +2559,13 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
         record.aiWeakness,
         record.owner,
       ].some((value) => String(value).toLowerCase().includes(keyword));
-      return metricMatch && statusMatch && ownerMatch && keywordMatch;
+      return metricMatch && statusMatch && ownerMatch && userMatch && keywordMatch;
     });
-  }, [activeMetric, ownerFilter, query, records, statusFilter]);
+  }, [activeMetric, ownerFilter, query, records, selectedUserId, statusFilter, users]);
 
   const selectedRecord = filteredRecords.find((record) => record.id === selectedId) ?? filteredRecords[0] ?? records[0];
+  const selectedUser = users.find((user) => user.id === selectedUserId)
+    ?? users.find((user) => user.recordIds.includes(selectedRecord?.id));
 
   useEffect(() => {
     setIntentPage(1);
@@ -2533,6 +2600,15 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
     setActiveMetric(metric);
     setStatusFilter("全部");
     setOwnerFilter("全部顾问");
+    setQuery("");
+    setSelectedUserId("");
+  }
+
+  function openUserDossier(user) {
+    setSelectedUserId(user.id);
+    setSelectedId(user.recordIds[0] || "");
+    setActiveMetric("all");
+    setStatusFilter("全部");
     setQuery("");
   }
 
@@ -2578,6 +2654,9 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
     try {
       const updated = await updateAdminRecord(id, patch);
       if (updated) updateRecordLocal(id, updated);
+      if (Object.prototype.hasOwnProperty.call(patch, "reportUnlocked")) {
+        setUsers(await fetchAdminUsers());
+      }
       setRemoteError("");
     } catch {
       setRemoteError("这次修改没有同步到数据库，请稍后重试。");
@@ -2602,15 +2681,36 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
     }
   }
 
-  function logout() {
+  async function handleCreateAdvisor(event) {
+    event.preventDefault();
+    setAdvisorState("正在创建");
     try {
-      window.localStorage.removeItem(ADMIN_SESSION_KEY);
-      window.localStorage.removeItem(ADMIN_ACCESS_KEY);
-    } catch {
-      // Ignore storage errors.
+      const advisor = await createAdvisor(advisorForm);
+      setAdvisors((current) => [...current, advisor]);
+      setAdvisorForm({ name: "", account: "", password: "" });
+      setAdvisorState("顾问账号已创建");
+    } catch (error) {
+      setAdvisorState(error.message || "创建失败");
     }
-    setAdminLoggedIn(false);
-    setView("home");
+  }
+
+  async function toggleAdvisor(advisor) {
+    try {
+      const updated = await setAdvisorActive(advisor.id, !advisor.active);
+      setAdvisors((current) => current.map((item) => item.id === updated.id ? updated : item));
+      setAdvisorState(updated.active ? "顾问账号已启用" : "顾问账号已停用");
+    } catch (error) {
+      setAdvisorState(error.message || "更新失败");
+    }
+  }
+
+  async function logout() {
+    try {
+      await logoutAdmin();
+    } finally {
+      setAdminUser(null);
+      setView("home");
+    }
   }
 
   if (!adminLoggedIn) {
@@ -2634,7 +2734,7 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
         <div className="admin-head-copy">
           <span className="document-kicker">OPC ADMIN CONSOLE</span>
           <h1>用户测评管理</h1>
-          <p>{loading ? "正在同步最新测评记录..." : "集中查看商业测评、AI工具短板、OPC等级、推荐品类和跟进状态。"}</p>
+          <p>{loading ? "正在同步最新测评记录..." : `${adminUser?.name} · ${isSuperAdmin ? "超级管理员可查看并分配全量用户" : "顾问仅显示分配给你的用户"}`}</p>
           {remoteError && <p className="admin-sync-note" role="status">{remoteError}</p>}
         </div>
         <div className="admin-head-actions">
@@ -2649,11 +2749,33 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
       </section>
 
       <section className="admin-stat-grid" aria-label="后台关键指标">
-        <AdminStat active={activeMetric === "all"} icon={UsersThree} label="用户记录" onClick={() => selectMetric("all")} value={records.length} />
+        <AdminStat active={activeMetric === "all"} icon={UsersThree} label="注册用户" onClick={() => selectMetric("all")} value={users.length} />
         <AdminStat active={activeMetric === "intent"} icon={ChartLineUp} label="高意向用户" onClick={() => selectMetric("intent")} value={highIntentCount} />
         <AdminStat active={activeMetric === "pending"} icon={FunnelSimple} label="待处理" onClick={() => selectMetric("pending")} value={pendingCount} />
         <AdminStat active={activeMetric === "converted"} icon={CheckCircle} label="已转化" onClick={() => selectMetric("converted")} value={convertedCount} />
       </section>
+
+      {isSuperAdmin && <section className="admin-advisor-manager" aria-labelledby="advisor-manager-title">
+        <div className="admin-advisor-heading"><span>TEAM ACCESS</span><h2 id="advisor-manager-title">顾问账号与数据权限</h2><p>顾问登录后只看到分配给自己的用户。</p></div>
+        <form onSubmit={handleCreateAdvisor}>
+          <label><span>顾问姓名</span><input value={advisorForm.name} onChange={(event) => setAdvisorForm({ ...advisorForm, name: event.target.value })} placeholder="例如：Mia" required /></label>
+          <label><span>登录账号</span><input value={advisorForm.account} onChange={(event) => setAdvisorForm({ ...advisorForm, account: event.target.value })} placeholder="英文或数字" required /></label>
+          <label><span>初始密码</span><input type="password" minLength={8} value={advisorForm.password} onChange={(event) => setAdvisorForm({ ...advisorForm, password: event.target.value })} placeholder="至少8位" required /></label>
+          <button type="submit">创建顾问 <ArrowRight size={16} /></button>
+        </form>
+        <div className="admin-advisor-list">
+          {advisors.map((advisor) => <article className={advisor.active ? "" : "is-disabled"} key={advisor.id}><div><strong>{advisor.name}</strong><span>{advisor.account}</span></div><small>{records.filter((record) => record.owner === advisor.name).length}条记录</small><button type="button" onClick={() => toggleAdvisor(advisor)}>{advisor.active ? "停用" : "启用"}</button></article>)}
+          {!advisors.length && <p>还没有顾问账号。</p>}
+        </div>
+        {advisorState && <small className="admin-advisor-state" role="status">{advisorState}</small>}
+      </section>}
+
+      {activeMetric === "all" && <section className="admin-user-directory" aria-labelledby="admin-user-directory-title">
+        <div className="admin-user-directory-head"><div><span>MEMBER DIRECTORY</span><h2 id="admin-user-directory-title">用户总档案</h2></div><button className={!selectedUserId ? "active" : ""} type="button" onClick={() => setSelectedUserId("")}>查看全部记录</button></div>
+        <div className="admin-user-directory-grid">
+          {users.map((user) => <button className={selectedUserId === user.id ? "active" : ""} type="button" onClick={() => openUserDossier(user)} key={user.id}><span>{user.name.slice(0, 1)}</span><div><strong>{user.name}</strong><small>{user.phone}</small></div><em>{user.assessmentCount}次测评</em><i>{user.completedTypes.map((type) => assessmentMeta[type]?.shortTitle).filter(Boolean).join(" · ") || "尚未测评"}</i></button>)}
+        </div>
+      </section>}
 
       {activeMetric === "intent" && (
         <section className="admin-intent-view" aria-labelledby="intent-view-title">
@@ -2719,7 +2841,7 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
                   <span className="sr-only">按顾问筛选</span>
                   <select value={ownerFilter} onChange={(event) => setOwnerFilter(event.target.value)} aria-label="按顾问筛选">
                     <option>全部顾问</option>
-                    {adminOwners.map((owner) => <option key={owner}>{owner}</option>)}
+                    {ownerOptions.map((owner) => <option key={owner}>{owner}</option>)}
                   </select>
                 </label>
                 <button className="admin-export-btn" type="button" onClick={exportVisibleRecords} title="导出当前名单">
@@ -2763,8 +2885,8 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
                           </select>
                         </td>
                         <td data-label="顾问">
-                          <select value={record.owner} onChange={(event) => persistRecord(record.id, { owner: event.target.value })} aria-label={`${record.name}顾问`}>
-                            {adminOwners.map((owner) => <option key={owner}>{owner}</option>)}
+                          <select value={record.owner} disabled={!isSuperAdmin} onChange={(event) => persistRecord(record.id, { owner: event.target.value })} aria-label={`${record.name}顾问`}>
+                            {ownerOptions.map((owner) => <option key={owner}>{owner}</option>)}
                           </select>
                         </td>
                         <td data-label="最近测评"><span>{formatAdminRecordTime(record.createdAt)}</span></td>
@@ -2896,10 +3018,11 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
                     <td>
                       <select
                         value={record.owner}
+                        disabled={!isSuperAdmin}
                         onChange={(event) => persistRecord(record.id, { owner: event.target.value })}
                         aria-label={`${record.name}顾问`}
                       >
-                        {adminOwners.map((owner) => <option key={owner}>{owner}</option>)}
+                        {ownerOptions.map((owner) => <option key={owner}>{owner}</option>)}
                       </select>
                     </td>
                     <td>
@@ -2907,9 +3030,9 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
                         <button type="button" onClick={() => setSelectedId(record.id)} aria-label={`查看${record.name}`}>
                           <Eye size={16} />
                         </button>
-                        <button type="button" onClick={() => deleteRecord(record.id)} aria-label={`删除${record.name}`}>
+                        {isSuperAdmin && <button type="button" onClick={() => deleteRecord(record.id)} aria-label={`删除${record.name}`}>
                           <Trash size={16} />
-                        </button>
+                        </button>}
                       </div>
                     </td>
                   </tr>
@@ -2937,6 +3060,13 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
                 <p>{selectedRecord.phone} · {selectedRecord.createdAt}</p>
               </div>
             </div>
+            {selectedUser && <section className="admin-user-aggregate" aria-label="用户汇总信息">
+              <div><span>注册时间</span><strong>{formatAdminRecordTime(selectedUser.createdAt)}</strong></div>
+              <div><span>累计测评</span><strong>{selectedUser.assessmentCount} 次</strong></div>
+              <div><span>完成项目</span><strong>{selectedUser.completedTypes.map((type) => assessmentMeta[type]?.shortTitle).filter(Boolean).join(" / ") || "尚未测评"}</strong></div>
+              <div><span>已开放报告</span><strong>{selectedUser.unlockedCount} 份</strong></div>
+              <nav aria-label="该用户的测评记录">{selectedUser.recordIds.map((recordId, index) => <button className={selectedRecord.id === recordId ? "active" : ""} type="button" onClick={() => setSelectedId(recordId)} key={recordId}>记录 {index + 1}</button>)}</nav>
+            </section>}
             <div className="admin-detail-metrics">
               <Metric label="测评类型" value={assessmentMeta[selectedRecord.assessmentType]?.shortTitle || "OPC定位"} />
               <Metric label="核心得分" value={selectedRecord.businessScore != null ? `${selectedRecord.businessScore}分` : `${selectedRecord.aiScore ?? "—"}分`} />
@@ -2947,6 +3077,7 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
               <div><span>AI工具短板</span><strong>{selectedRecord.aiWeakness || "本次未测"}</strong></div>
               <div><span>来源</span><strong>{selectedRecord.source}</strong></div>
               <div><span>负责顾问</span><strong>{selectedRecord.owner}</strong></div>
+              <div><span>完整报告</span><strong>{selectedRecord.reportUnlocked ? `已开放 · ${selectedRecord.unlockedBy || "管理员"}` : "尚未开放"}</strong></div>
             </div>
 
             {selectedBusiness || selectedAi ? (
@@ -3059,6 +3190,9 @@ function AdminDashboard({ adminLoggedIn, setAdminLoggedIn, setView }) {
               />
             </label>
             <div className="admin-detail-actions">
+              <button type="button" className={selectedRecord.reportUnlocked ? "ghost-btn" : "primary-btn compact"} onClick={() => persistRecord(selectedRecord.id, { reportUnlocked: !selectedRecord.reportUnlocked })}>
+                {selectedRecord.reportUnlocked ? "收回完整报告" : "开放完整报告"}
+              </button>
               <button type="button" className="primary-btn compact" onClick={() => persistRecord(selectedRecord.id, { status: "已联系" })}>
                 标记已联系
               </button>
@@ -3206,14 +3340,8 @@ export function App() {
   });
   const [currentUser, setCurrentUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
-  const [adminLoggedIn, setAdminLoggedIn] = useState(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return window.localStorage.getItem(ADMIN_SESSION_KEY) === "true";
-    } catch {
-      return false;
-    }
-  });
+  const [adminUser, setAdminUser] = useState(null);
+  const adminLoggedIn = Boolean(adminUser);
 
   const businessResult = useMemo(() => (
     isAssessmentComplete(answers, commercialQuestions) ? calculateBusiness(answers) : null
@@ -3237,6 +3365,14 @@ export function App() {
     }
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetchCurrentAdmin()
+      .then((admin) => { if (active) setAdminUser(admin); })
+      .catch(() => { if (active) setAdminUser(null); });
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -3403,6 +3539,7 @@ export function App() {
       )}
       {view === "business-result" && <BusinessStandaloneResult businessResult={businessResult} answers={answers} sessionRecordId={sessionRecordId} leadInfo={leadInfo} setView={navigateView} />}
       {view === "ai-result" && <AiStandaloneResult aiResult={aiResult} answers={aiAnswers} sessionRecordId={sessionRecordId} leadInfo={leadInfo} setView={navigateView} />}
+      {view === "ai-tools" && <AiToolsPage onNavigate={navigateView} />}
       {view === "card" && (
         <PositioningCard
           businessResult={businessResult}
@@ -3416,11 +3553,11 @@ export function App() {
       )}
       {view === "login" && <UserAuthPage onAuthenticated={handleAuthenticated} onNavigate={navigateView} />}
       {view === "account" && currentUser && <UserAccountPage currentUser={currentUser} onNavigate={navigateView} onLogout={handleLogout} />}
-      {view === "admin-login" && <AdminLogin setView={navigateView} setAdminLoggedIn={setAdminLoggedIn} />}
+      {view === "admin-login" && <AdminLogin setView={navigateView} onAuthenticated={setAdminUser} />}
       {view === "admin" && (
         <AdminDashboard
-          adminLoggedIn={adminLoggedIn}
-          setAdminLoggedIn={setAdminLoggedIn}
+          adminUser={adminUser}
+          setAdminUser={setAdminUser}
           setView={navigateView}
         />
       )}

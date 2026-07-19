@@ -11,6 +11,13 @@ import {
   isAssessmentComplete,
   levelMap,
 } from "./assessment.js";
+import { aiToolCatalog } from "./aiTools.js";
+import {
+  aiSolutions,
+  buildCategoryRationales,
+  getAiSolution,
+  getLevelGrowthPlan,
+} from "./resultLogic.js";
 
 test("assessment configuration is internally consistent", () => {
   assert.equal(commercialQuestions.length, 17);
@@ -94,4 +101,52 @@ test("improving any answer cannot reduce the business score", () => {
       assert.ok(calculateBusiness(improved).totalScore >= baseline);
     });
   }
+});
+
+test("each OPC level points to the correct next level without regression", () => {
+  levelMap.forEach((level, index) => {
+    const plan = getLevelGrowthPlan(level.level);
+    const expectedNext = levelMap[index + 1]?.level ?? null;
+    assert.equal(plan.next, expectedNext);
+    assert.ok(plan.objective.length > 6);
+    assert.equal(plan.steps.length, 4);
+    if (expectedNext) assert.equal(plan.steps.at(-1), `升级${expectedNext}`);
+  });
+  assert.equal(getLevelGrowthPlan("L7").next, "L8");
+});
+
+test("every AI weakness has a concrete solution and matching tools", () => {
+  assert.deepEqual(Object.keys(aiSolutions), ["提示词库", "内容生产", "自动化流程", "私域工具", "数据复盘", "工具成本"]);
+  Object.entries(aiSolutions).forEach(([area, solution]) => {
+    assert.equal(getAiSolution(area), solution);
+    assert.ok(solution.title.length >= 8);
+    assert.ok(solution.summary.length >= 20);
+    assert.ok(solution.action.length >= 15);
+    assert.ok(solution.toolIds.length >= 2);
+    solution.toolIds.forEach((id) => assert.ok(aiToolCatalog.some((tool) => tool.id === id)));
+  });
+});
+
+test("AI tool catalog uses unique official HTTPS links and covers all areas", () => {
+  assert.equal(new Set(aiToolCatalog.map((tool) => tool.id)).size, aiToolCatalog.length);
+  aiToolCatalog.forEach((tool) => {
+    assert.match(tool.url, /^https:\/\//);
+    assert.ok(tool.areas.length > 0);
+  });
+  Object.keys(aiSolutions).forEach((area) => {
+    assert.ok(aiToolCatalog.some((tool) => tool.areas.includes(area)), `${area} should have at least one tool`);
+  });
+});
+
+test("Top3 rationale is derived from the same weighted category result", () => {
+  const business = calculateBusiness(commercialQuestions.map((_, index) => index % 4));
+  const ai = calculateAi(aiQuestions.map((_, index) => index % 4));
+  const rationales = buildCategoryRationales(business, ai);
+  assert.equal(rationales.length, 3);
+  rationales.forEach((item, index) => {
+    assert.equal(item.name, business.recommendedCategories[index].name);
+    assert.equal(item.match, business.recommendedCategories[index].match);
+    assert.equal(item.drivers.length, 2);
+    assert.match(item.reason, /主要贡献项/);
+  });
 });
